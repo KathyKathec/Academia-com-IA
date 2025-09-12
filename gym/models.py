@@ -36,7 +36,8 @@ class TipoPlano(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.nome
+        return f"{self.nome} ({self.dias} dias)"
+
 
 # -----------------------------
 # Plano
@@ -56,35 +57,37 @@ class Plano(models.Model):
 
 # -----------------------------
 # Cliente
-# -----------------------------
-class Cliente(models.Model):
+class Cliente(models.Model): 
     identidade = models.CharField(max_length=20, unique=True)
     nome = models.CharField(max_length=200)
     telefone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
-    logradouro=models.TextField(blank=True, null=True)
-    idade = models.IntegerField(blank=True, null=True 
-            , validators=[MinValueValidator(10), MaxValueValidator(100)])
-    sexo = models.CharField(max_length=10, choices=[("masculino","Masculino") ,("feminino","Feminino"),("outros","Outros")], blank=True, null=True)
+    endereco = models.TextField(blank=True, null=True)
+    idade = models.IntegerField(blank=True, null=True,
+            validators=[MinValueValidator(12), MaxValueValidator(100)])
+    sexo = models.CharField(max_length=10, choices=[("masculino","Masculino"),
+                                                     ("feminino","Feminino"),
+                                                     ("outros","Outros")], blank=True, null=True)
     imagem = models.ImageField(upload_to='clientes/', blank=True, null=True)
-    status = models.BooleanField(default=True)  # ativo ou não, se verdadeiro entao esta ativo.
-    
+    status = models.BooleanField(default=True)
+
     def __str__(self):
         return self.nome
 
 # -----------------------------
-# ClientePlano (relacional)
-# -----------------------------
-class ClientePlano(models.Model):
+# ClientePlano (relaciona Cliente com Plano)
+class ClientePlano(models.Model): 
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
     plano = models.ForeignKey(Plano, on_delete=models.CASCADE)
     data_inicio = models.DateField(default=date.today)
     data_fim = models.DateField(blank=True, null=True)
     ativo = models.BooleanField(default=True)
-    status_vencimento = models.CharField(max_length=20, choices=[("atrasado","Atrasado"),("em dia","Em dia")])  
-    
+    status_vencimento = models.CharField(max_length=20, choices=[("atrasado","Atrasado"),
+                                                                 ("em dia","Em dia")])  
+
     def __str__(self):
         return f"{self.cliente.nome} - {self.plano.nome}"
+
 
 # -----------------------------
 # Pagamento
@@ -94,6 +97,7 @@ class Pagamento(models.Model):
     plano = models.ForeignKey(Plano, on_delete=models.CASCADE)
     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # quem registrou
     data = models.DateTimeField(auto_now_add=True)
+
     METODOS_PAGAMENTO = [
         ("dinheiro", "Dinheiro"),
         ("cartao_credito", "Cartão de Crédito"),
@@ -102,17 +106,18 @@ class Pagamento(models.Model):
         ("boleto", "Boleto"),
         ("outro", "Outro"),
     ]
-    metodo = models.CharField(
-        max_length=50,
-        choices=METODOS_PAGAMENTO,
-        help_text="Selecione o método de pagamento"
-    )
+    metodo = models.CharField(max_length=50, choices=METODOS_PAGAMENTO)
     juros = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     descontos = models.DecimalField(max_digits=6, decimal_places=2, default=0)
-    total = models.DecimalField(max_digits=8, decimal_places=2)
-    
-    def __str__(self):
-        return f"Pagamento {self.id} - {self.cliente.nome}"
+    total = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)  # calculado automaticamente
+
+    def save(self, *args, **kwargs):
+        # Se o total não foi informado, calcular automaticamente
+        if self.plano:
+            preco_base = self.plano.preco
+            self.total = preco_base + (self.juros or 0) - (self.descontos or 0)
+        super().save(*args, **kwargs)
+
 
 # -----------------------------
 # Assistência (com IA no futuro)

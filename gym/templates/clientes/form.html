@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ form.instance.pk|yesno:"Editar Cliente,Novo Cliente" }}{% endblock %}
+
+{% block content %}
+<nav>
+    <a href="{% url 'home' %}">Início</a> |
+    <a href="{% url 'lista_clientes' %}">Clientes</a> |
+    <a href="{% url 'plano_list' %}">Planos</a> |
+    <a href="{% url 'pagamento_list' %}">Pagamentos</a> |
+    <a href="{% url 'logout' %}">Sair</a>
+</nav>
+
+<div class="container mt-4">
+    <h2>{{ form.instance.pk|yesno:"Editar Cliente com Plano,Novo Cliente com Plano" }}</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- DADOS DO CLIENTE -->
+        <div class="card mb-4">
+            <div class="card-header">Dados do Cliente</div>
+            <div class="card-body">
+                {% for field in form.visible_fields %}
+                    {% if field.name != "status" %}
+                        <div class="mb-3">
+                            {{ field.label_tag }}
+                            {{ field|add_class:"form-control" }}
+                            {% if field.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in field.errors %}{{ error }}<br>{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- Checkbox de Status (apenas edição) -->
+                {% if form.instance.pk %}
+                    <div class="form-check mb-3">
+                        {{ form.status|add_class:"form-check-input" }}
+                        {{ form.status.label_tag }}
+                        {% if form.status.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.status.errors %}{{ error }}<br>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- PLANOS DO CLIENTE -->
+        <div class="card mb-4">
+            <div class="card-header">Plano do Cliente</div>
+            <div class="card-body">
+                {{ formset.management_form }}
+
+                {% for form_plano in formset %}
+                    <div class="border rounded p-3 mb-3 bg-light">
+                        {% for field in form_plano.visible_fields %}
+                            <div class="mb-3">
+                                {{ field.label_tag }}
+                                {{ field|add_class:"form-control" }}
+                                {% if field.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in field.errors %}{{ error }}<br>{% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+
+                <!-- Aviso de vencimento (apenas edição e se existir) -->
+                {% if aviso_vencimento %}
+                    <div class="alert alert-warning">
+                        {{ aviso_vencimento }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Salvar Cliente</button>
+    </form>
+</div>
+{% endblock %}

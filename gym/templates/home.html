@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Página Inicial{% endblock %}
+
+{% block content %}
+<div class="text-center mt-5">
+    <h1 class="display-4">Bem-vindo à Academia!</h1>
+    <p class="lead">Gerencie clientes, planos e pagamentos de forma fácil.</p>
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-3">
+            <a href="{% url 'lista_clientes' %}" class="btn btn-primary btn-lg w-100 mb-3">
+                <i class="bi bi-people"></i> Clientes
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{% url 'plano_list' %}" class="btn btn-success btn-lg w-100 mb-3">
+                <i class="bi bi-card-list"></i> Planos
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{% url 'pagamento_list' %}" class="btn btn-warning btn-lg w-100 mb-3">
+                <i class="bi bi-cash-stack"></i> Pagamentos
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

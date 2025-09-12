@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Pagamentos</h2>
+<a href="{% url 'pagamento_create' %}" class="btn btn-success mb-3">Novo Pagamento</a>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Cliente</th>
+            <th>Plano</th>
+            <th>Método</th>
+            <th>Total</th>
+            <th>Data</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pagamento in pagamentos %}
+        <tr>
+            <td>{{ pagamento.cliente }}</td>
+            <td>{{ pagamento.plano }}</td>
+            <td>{{ pagamento.metodo }}</td>
+            <td>R$ {{ pagamento.total }}</td>
+            <td>{{ pagamento.data }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{% url 'pagamento_csv' %}" class="btn btn-secondary mb-3">Exportar CSV</a>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Novo/Editar Pagamento{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{% if form.instance.pk %}Editar Pagamento{% else %}Novo Pagamento{% endif %}</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            {{ form.cliente.label_tag }}
+            {{ form.cliente|add_class:"form-select" }}
+            {% if form.cliente.errors %}
+                <div class="text-danger">
+                    {% for error in form.cliente.errors %}{{ error }}<br>{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            {{ form.plano.label_tag }}
+            <select name="{{ form.plano.name }}" id="id_plano" class="form-select">
+                {% for plano in planos %}
+                    <option value="{{ plano.id }}" data-preco="{{ plano.preco }}"
+                        {% if form.instance.plano and plano.id == form.instance.plano.id %}selected{% endif %}>
+                        {{ plano.nome }} - R$ {{ plano.preco }}
+                    </option>
+                {% endfor %}
+            </select>
+            {% if form.plano.errors %}
+                <div class="text-danger">
+                    {% for error in form.plano.errors %}{{ error }}<br>{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            {{ form.metodo.label_tag }}
+            {{ form.metodo|add_class:"form-select" }}
+            {% if form.metodo.errors %}
+                <div class="text-danger">
+                    {% for error in form.metodo.errors %}{{ error }}<br>{% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            {{ form.juros.label_tag }}
+            {{ form.juros }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.descontos.label_tag }}
+            {{ form.descontos }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.total.label_tag }}
+            {{ form.total }}
+        </div>
+
+        <button type="submit" class="btn btn-primary">Salvar</button>
+    </form>
+</div>
+
+<!-- JS para atualizar o total automaticamente -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const precoInput = document.querySelector('#id_plano');
+    const jurosInput = document.querySelector('#id_juros');
+    const descontoInput = document.querySelector('#id_descontos');
+    const totalInput = document.querySelector('#id_total');
+
+    function atualizarTotal() {
+        const option = precoInput.selectedOptions[0];
+        const precoBase = parseFloat(option.dataset.preco || 0);
+        const juros = parseFloat(jurosInput.value || 0);
+        const desconto = parseFloat(descontoInput.value || 0);
+        totalInput.value = (precoBase + juros - desconto).toFixed(2);
+    }
+
+    precoInput.addEventListener('change', atualizarTotal);
+    jurosInput.addEventListener('input', atualizarTotal);
+    descontoInput.addEventListener('input', atualizarTotal);
+
+    atualizarTotal();  // vai calcular no carregamento
+});
+</script>
+{% endblock %} 

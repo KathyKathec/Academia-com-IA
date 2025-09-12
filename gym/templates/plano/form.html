@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block content %}
+<h2>{% if form.instance.pk %}Editar Plano{% else %}Novo Plano{% endif %}</h2>
+
+<form method="post">
+    {% csrf_token %}
+
+    {% for field in form %}
+        <div class="mb-3">
+            {{ field.label_tag }}
+
+            {% if field.errors %}
+                {{ field|add_class:"form-control is-invalid" }}
+            {% else %}
+                {{ field|add_class:"form-control" }}
+            {% endif %}
+
+            {% if field.errors %}
+                <div class="invalid-feedback">
+                    {% for error in field.errors %}
+                        {{ error }}<br>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary">Salvar</button>
+</form>
+{% endblock %}
