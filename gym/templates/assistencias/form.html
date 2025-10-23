@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Nova Assistência{% endblock %}
+{% block content %}
+<h2>Registrar Assistência</h2>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="cliente">Cliente</label>
+        <select name="cliente" class="form-select" required>
+            {% for cliente in clientes %}
+                <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label for="tipo">Tipo de Assistência</label>
+        <select name="tipo" class="form-select" required>
+            <option value="manual">Manual</option>
+            <option value="facial">Facial (IA)</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-success">Salvar</button>
+</form>
+{% endblock %}

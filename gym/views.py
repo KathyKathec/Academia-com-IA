@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from datetime import date, timedelta
 import csv
+from .models import Assistencia
+from .models import Servico, DiaSemana, PlanoServico
 from .models import Cliente, Plano, Pagamento
 from .forms import ClienteForm, PlanoForm, PagamentoForm, ClientePlanoFormSet
 
@@ -12,7 +14,7 @@ from .forms import ClienteForm, PlanoForm, PagamentoForm, ClientePlanoFormSet
 def home(request):
     return render(request, 'home.html')
 
-# Criar cliente com plano@login_required
+# Criar cliente com plano 
 def criar_cliente(request):
     if request.method == "POST":
         form = ClienteForm(request.POST, request.FILES)
@@ -73,9 +75,69 @@ def editar_cliente(request, pk):
 
 
 #Listar clientes
+
+from datetime import date, timedelta
+
+@login_required
 def lista_clientes(request):
     clientes = Cliente.objects.all()
-    return render(request, 'clientes/lista.html', {'clientes': clientes})
+    clientes_info = []
+    
+    for cliente in clientes:
+        plano_ativo = cliente.clienteplano_set.filter(ativo=True).first()
+        
+        if plano_ativo:
+            data_inicio = plano_ativo.data_inicio
+            tipo_plano = plano_ativo.plano.tipo.nome  # assumindo que tipo tem campo nome
+            
+            # Calcula duração baseado no tipo do plano
+            if 'anual' in tipo_plano.lower():
+                duracao = 365
+            elif 'semestral' in tipo_plano.lower():
+                duracao = 180
+            elif 'trimestral' in tipo_plano.lower():
+                duracao = 90
+            else:  # mensal
+                duracao = 30
+            
+            data_vencimento = data_inicio + timedelta(days=duracao)
+            dias_restantes = (data_vencimento - date.today()).days
+
+            if dias_restantes < 0:
+                status_class = "text-danger"
+                status_vencimento = f"Vencido há {abs(dias_restantes)} dias"
+            elif dias_restantes <= 7:
+                status_class = "text-warning"
+                status_vencimento = f"Vence em {dias_restantes} dias"
+            else:
+                status_class = "text-success"
+                status_vencimento = f"Em dia (vence em {dias_restantes} dias)"
+        else:
+            status_class = "text-secondary"
+            status_vencimento = "Sem plano ativo"
+            
+        clientes_info.append({
+            'pk': cliente.pk,
+            'nome': cliente.nome,
+            'identidade': cliente.identidade,
+            'plano': plano_ativo.plano.nome if plano_ativo else "-",
+            'status_vencimento': status_vencimento,
+            'status_class': status_class
+        })
+    
+    return render(request, 'clientes/lista.html', {
+        'clientes': clientes_info,
+        'today': date.today()
+    })
+
+# delete cliente
+def deletar_cliente(request, pk):
+    cliente = get_object_or_404(Cliente, pk=pk)
+    if request.method == "POST":
+        cliente.delete()
+        return redirect('lista_clientes')
+    return render(request, 'clientes/confirm_delete.html', {'cliente': cliente})
+
 
 # Detalhes do cliente
 
@@ -169,3 +231,52 @@ def pagamento_csv(request):
             pagamento.data.strftime('%d/%m/%Y %H:%M')
         ])
     return response
+
+@login_required
+def servico_list(request):
+    servicos= Servico.objects.prefetch_related('dias').all()
+    return render(request, 'servicos/lista.html',{'servicos': servicos})
+
+@login_required
+def servico_create(request):
+    dias= DiaSemana.objects.all()
+    planos = Plano.objects.filter(status=True)
+
+    if request.method == "POST":
+        nome = request.POST.get('nome')
+        descricao=request.POST.get('descricao')
+        horario = request.POST.get('horario')
+        dias_selecionados= request.POST.getlist('dias')
+        planos_selecionados= request.POST.getlist('planos')
+
+        servico= Servico.objects.create(nome=nome, descricao=descricao, horario=horario)
+        servico.dias.set(dias_selecionados)
+
+        #para asociar planos
+        for plano_id in planos_selecionados:
+            plano= get_object_or_404(Plano, pk=plano_id)
+            PlanoServico.objects.create(plano=plano, servico=servico)
+
+        return redirect('servico_list')
+    return render(request, 'servicos/form.html', {'dias':dias, 'planos':planos})
+
+@login_required
+def assistencia_list(request):
+    assistencias = Assistencia.objects. select_related('cliente','usuario').order_by('-data','-hora')
+    return render(request, 'assistencias/lista.html',{'assistencias':assistencias})
+
+@login_required
+def assistencia_create(request):
+    clientes= Cliente.objects.filter(status=True)
+    if request.method =="POST":
+        cliente_id = request.POST.get('cliente')
+        tipo = request.POST.get('tipo')
+        cliente=get_object_or_404(Cliente, pk=cliente_id)
+
+        Assistencia.objects.create(
+            cliente=cliente,
+            usuario=request.user,
+            tipo=tipo
+        )
+        return redirect('assistencia_list')
+    return render(request, 'assistencias/form.html', {'clientes':clientes})

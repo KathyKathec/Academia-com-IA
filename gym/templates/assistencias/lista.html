@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Assistências{% endblock %}
+
+{% block content %}
+<h2>Assistências Registradas</h2>
+<a href="{% url 'assistencia_create' %}" class="btn btn-primary mb-3">Nova Assistência</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Cliente</th>
+            <th>Usuário</th>
+            <th>Tipo</th>
+            <th>Data</th>
+            <th>Hora</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in assistencias %}
+        <tr>
+            <td>{{ a.cliente.nome }}</td>
+            <td>{{ a.usuario.username }}</td>
+            <td>{{ a.get_tipo_display }}</td>
+            <td>{{ a.data|date:"d/m/Y" }}</td>
+            <td>{{ a.hora|time:"H:i" }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Serviços{% endblock %}
+
+{% block content %}
+<h2>Serviços da Academia</h2>
+<a href="{% url 'servico_create' %}" class="btn btn-primary mb-3">Novo Serviço</a>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Nome</th>
+            <th>Descrição</th>
+            <th>Horário</th>
+            <th>Dias</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in servicos %}
+        <tr>
+            <td>{{ s.nome }}</td>
+            <td>{{ s.descricao }}</td>
+            <td>{{ s.horario }}</td>
+            <td>
+                {% for d in s.dias.all %}
+                    <span class="badge bg-info text-dark">{{ d.get_nome_display }}</span>
+                {% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

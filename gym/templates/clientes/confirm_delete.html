@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Exclusão{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h2>Confirmar Exclusão</h2>
+        </div>
+        <div class="card-body">
+            <p class="lead">Tem certeza que deseja excluir o cliente "{{ cliente.nome }}"?</p>
+            <p>Esta ação não pode ser desfeita.</p>
+            
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+                <a href="{% url 'lista_clientes' %}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

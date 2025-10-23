@@ -4,7 +4,7 @@
 {% block title %}{{ form.instance.pk|yesno:"Editar Cliente,Novo Cliente" }}{% endblock %}
 
 {% block content %}
-<nav>
+<nav class="mb-3">
     <a href="{% url 'home' %}">Início</a> |
     <a href="{% url 'lista_clientes' %}">Clientes</a> |
     <a href="{% url 'plano_list' %}">Planos</a> |
@@ -18,15 +18,19 @@
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
-        <!-- DADOS DO CLIENTE -->
-        <div class="card mb-4">
-            <div class="card-header">Dados do Cliente</div>
+        <!-- ================= DADOS DO CLIENTE ================= -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-primary text-white">Dados do Cliente</div>
             <div class="card-body">
                 {% for field in form.visible_fields %}
                     {% if field.name != "status" %}
                         <div class="mb-3">
                             {{ field.label_tag }}
-                            {{ field|add_class:"form-control" }}
+                            {% if field.field.widget.input_type == "checkbox" %}
+                                {{ field|add_class:"form-check-input" }}
+                            {% else %}
+                                {{ field|add_class:"form-control" }}
+                            {% endif %}
                             {% if field.errors %}
                                 <div class="invalid-feedback d-block">
                                     {% for error in field.errors %}{{ error }}<br>{% endfor %}
@@ -51,18 +55,53 @@
             </div>
         </div>
 
-        <!-- PLANOS DO CLIENTE -->
-        <div class="card mb-4">
-            <div class="card-header">Plano do Cliente</div>
+        <!-- ================= PLANOS DO CLIENTE ================= -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-success text-white">Planos do Cliente</div>
             <div class="card-body">
                 {{ formset.management_form }}
 
+                {% comment %} Renderizamos solo los planos existentes {% endcomment %}
                 {% for form_plano in formset %}
+                    {% if form_plano.instance.pk %}
+                        {% for field in form_plano.hidden_fields %}
+                            {{ field }}
+                        {% endfor %}
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            {% for field in form_plano.visible_fields %}
+                                <div class="mb-3">
+                                    {{ field.label_tag }}
+                                    {% if field.field.widget.input_type == "checkbox" %}
+                                        {{ field|add_class:"form-check-input" }}
+                                    {% else %}
+                                        {{ field|add_class:"form-control" }}
+                                    {% endif %}
+                                    {% if field.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in field.errors %}{{ error }}<br>{% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+
+                {% comment %} Formulario extra para nuevo plano {% endcomment %}
+                {% for form_plano in formset.extra_forms %}
+                    {% for field in form_plano.hidden_fields %}
+                        {{ field }}
+                    {% endfor %}
                     <div class="border rounded p-3 mb-3 bg-light">
+                        <h5>Adicionar novo plano</h5>
                         {% for field in form_plano.visible_fields %}
                             <div class="mb-3">
                                 {{ field.label_tag }}
-                                {{ field|add_class:"form-control" }}
+                                {% if field.field.widget.input_type == "checkbox" %}
+                                    {{ field|add_class:"form-check-input" }}
+                                {% else %}
+                                    {{ field|add_class:"form-control" }}
+                                {% endif %}
                                 {% if field.errors %}
                                     <div class="invalid-feedback d-block">
                                         {% for error in field.errors %}{{ error }}<br>{% endfor %}
@@ -73,7 +112,6 @@
                     </div>
                 {% endfor %}
 
-                <!-- Aviso de vencimento (apenas edição e se existir) -->
                 {% if aviso_vencimento %}
                     <div class="alert alert-warning">
                         {{ aviso_vencimento }}

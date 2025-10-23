@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Novo Serviço{% endblock %}
+{% block content %}
+<h2>Cadastrar Serviço</h2>
+<form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label>Nome</label>
+        <input type="text" name="nome" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label>Descrição</label>
+        <textarea name="descricao" class="form-control"></textarea>
+    </div>
+    <div class="mb-3">
+        <label>Horário</label>
+        <input type="text" name="horario" class="form-control">
+    </div>
+    <div class="mb-3">
+        <label>Dias da Semana</label><br>
+        {% for dia in dias %}
+            <input type="checkbox" name="dias" value="{{ dia.id }}"> {{ dia.get_nome_display }}<br>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        <label>Planos que incluem este serviço</label><br>
+        {% for plano in planos %}
+            <input type="checkbox" name="planos" value="{{ plano.id }}"> {{ plano.nome }}<br>
+        {% endfor %}
+    </div>
+    <button type="submit" class="btn btn-success">Salvar</button>
+</form>
+{% endblock %}

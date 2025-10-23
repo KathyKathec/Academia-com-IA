@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Clientes{% endblock %}
 
 {% block content %}
-<nav>
+<nav class="mb-3">
     <a href="{% url 'home' %}">Início</a> |
     <a href="{% url 'lista_clientes' %}">Clientes</a> |
     <a href="{% url 'plano_list' %}">Planos</a> |
@@ -11,20 +11,20 @@
     <a href="{% url 'logout' %}">Sair</a>
 </nav>
 
-<div class="card">
-    <div class="card-header">
-        <h2>Clientes</h2>
-        <a href="{% url 'criar_cliente' %}" class="btn btn-success btn-sm float-end">Novo Cliente</a>
+<div class="card shadow">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h2 class="mb-0">Lista de Clientes</h2>
+        <a href="{% url 'criar_cliente' %}" class="btn btn-success btn-sm">+ Novo Cliente</a>
     </div>
     <div class="card-body">
-        <table class="table table-striped">
-            <thead>
+        <table class="table table-hover align-middle">
+            <thead class="table-dark">
                 <tr>
+                    <th>Foto</th>
                     <th>Nome</th>
                     <th>Identidade</th>
-                    <th>Status</th>
                     <th>Plano</th>
-                    <th>Data Início</th>
+                    <th>Início</th>
                     <th>Vencimento</th>
                     <th>Situação</th>
                     <th>Ações</th>
@@ -32,46 +32,39 @@
             </thead>
             <tbody>
                 {% for cliente in clientes %}
-                {% with plano=cliente.clienteplano_set.last %}
                 <tr>
+                    <td>
+                        {% if cliente.imagem %}
+                            <img src="{{ cliente.imagem.url }}" alt="Foto de {{ cliente.nome }}" width="60" height="60" class="rounded-circle border">
+                        {% else %}
+                            <img src="{% static 'img/placeholder.png' %}" width="60" height="60" 
+                                 class="rounded-circle border" alt="Sem imagem">
+                        {% endif %}
+                    </td>
                     <td>{{ cliente.nome }}</td>
                     <td>{{ cliente.identidade }}</td>
-                    <td>{{ cliente.status|yesno:"Ativo,Inativo" }}</td>
-
-                    {% if plano %}
-                        <td>{{ plano.plano.nome }}</td>
-                        <td>{{ plano.data_inicio|date:"d/m/Y" }}</td>
-                        <td>
-                            {% if plano.data_fim %}
-                                {{ plano.data_fim|date:"d/m/Y" }}
-                            {% else %}
-                                <em>Indefinido</em>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if plano.status_vencimento %}
-                                {% if plano.status_vencimento == "atrasado" %}
-                                    <span class="badge bg-danger">Atrasado</span>
-                                {% elif plano.status_vencimento == "em dia" %}
-                                    <span class="badge bg-success">Em dia</span>
-                                {% endif %}
-                            {% else %}
-                                <span class="badge bg-secondary">Indefinido</span>
-                            {% endif %}
-                        </td>
-                    {% else %}
-                        <td colspan="4"><em>Sem plano</em></td>
-                    {% endif %}
-
+                    <td>{{ cliente.plano }}</td>
+                    <td>{{ cliente.data_inicio|date:"d/m/Y" }}</td>
+                    <td>{{ cliente.data_fim|date:"d/m/Y" }}</td>
+                    <td>
+                        <span class="{{ cliente.status_class }}">
+                            {{ cliente.status_vencimento }}
+                        </span>
+                    </td>
                     <td>
                         <a href="{% url 'editar_cliente' cliente.pk %}" class="btn btn-warning btn-sm">Editar</a>
-                        <a href="{% url 'cliente_detail' cliente.pk %}" class="btn btn-info btn-sm">Detalhes</a>
+                        <a href="{% url 'cliente_detail' cliente.pk %}" class="btn btn-info btn-sm">Ver</a>
+                        <a href="{% url 'deletar_cliente' cliente.pk %}" class="btn btn-danger">Deletar cliente</a>
+                    
                     </td>
                 </tr>
-                {% endwith %}
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-muted">Nenhum cliente cadastrado.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
 {% endblock %}
+
+{% now "Y-m-d" as today %}

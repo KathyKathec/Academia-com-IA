@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Detalhes do Cliente{% endblock %}
+
+{% block content %}
+<nav>
+    <a href="{% url 'home' %}">Início</a> |
+    <a href="{% url 'lista_clientes' %}">Clientes</a> |
+    <a href="{% url 'editar_cliente' cliente.pk %}">Editar</a>
+</nav>
+
+<div class="container mt-4">
+    <h2>Cliente: {{ cliente.nome }}</h2>
+
+    <!-- DADOS PESSOAIS -->
+    <div class="card mb-4">
+        <div class="card-header">Dados Pessoais</div>
+        <div class="card-body">
+            <p><strong>Identidade:</strong> {{ cliente.identidade }}</p>
+            <p><strong>Email:</strong> {{ cliente.email|default:"-" }}</p>
+            <p><strong>Telefone:</strong> {{ cliente.telefone|default:"-" }}</p>
+            <p><strong>Idade:</strong> {{ cliente.idade|default:"-" }}</p>
+            <p><strong>Sexo:</strong> {{ cliente.sexo|default:"-" }}</p>
+            <p><strong>Status:</strong>
+                {% if cliente.status %}
+                    <span class="badge bg-success">Ativo</span>
+                {% else %}
+                    <span class="badge bg-danger">Inativo</span>
+                {% endif %}
+            </p>
+            {% if cliente.imagem %}
+                <p><img src="{{ cliente.imagem.url }}" alt="Foto de {{ cliente.nome }}" width="150"></p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- PLANOS -->
+    <div class="card mb-4">
+        <div class="card-header">Planos do Cliente</div>
+        <div class="card-body">
+            {% if planos %}
+                <ul class="list-group">
+                    {% for cp in planos %}
+                        <li class="list-group-item">
+                            <strong>{{ cp.plano.nome }}</strong><br>
+                            Início: {{ cp.data_inicio|date:"d/m/Y" }}<br>
+                            Fim: {{ cp.data_fim|date:"d/m/Y"|default:"Não definido" }}<br>
+                            Status: {{ cp.status_vencimento }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>Nenhum plano associado.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- AVISOS DE VENCIMENTO -->
+    {% if avisos %}
+        <div class="alert alert-warning">
+            <ul>
+                {% for aviso in avisos %}
+                    <li>{{ aviso }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
