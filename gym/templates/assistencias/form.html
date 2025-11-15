@@ -1,27 +1,83 @@
 {% extends 'base.html' %}
-{% block title %}Nova Assistência{% endblock %}
+{% block title %}Registrar Assistência{% endblock %}
 {% block content %}
-<h2>Registrar Assistência</h2>
 
-<form method="post">
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Registrar Assistência</h3>
+                </div>
+                <div class="card-body p-4">
+                    
+                    <!-- Formulário manual -->
+                    <form method="post" id="manual-form">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="cliente-select" class="form-label fw-bold">Cliente</label>
+                            <select id="cliente-select" name="cliente" class="form-select form-select-lg" required>
+                                <option value="" selected disabled>-- Selecione um cliente --</option>
+                                {% for cliente in clientes %}
+                                    <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="tipo" class="form-label fw-bold">Tipo de Assistência</label>
+                            <select name="tipo" class="form-select form-select-lg" required>
+                                <option value="manual" selected>Manual</option>
+                                <option value="facial">Facial (IA)</option>
+                            </select>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg fw-bold">
+                                <i class="bi bi-check-circle"></i> Salvar Assistência Manual
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <!-- Botão IA Automática -->
+                    <div class="d-grid">
+                        <button type="button" id="ia-auto-button" class="btn btn-primary btn-lg fw-bold">
+                            <i class="bi bi-camera-fill"></i> Registrar (IA Automática)
+                        </button>
+                        <small class="text-muted text-center mt-2">Abre câmera para reconhecer cliente automaticamente</small>
+                    </div>
+
+                </div>
+            </div>
+
+            <a href="{% url 'assistencia_list' %}" class="btn btn-outline-secondary mt-3 w-100">
+                ← Voltar à Lista
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- form oculto para acionar reconhecimento_once sem target-id (auto) -->
+<form method="post" id="ia-form-auto" style="display:none;">
     {% csrf_token %}
-    <div class="mb-3">
-        <label for="cliente">Cliente</label>
-        <select name="cliente" class="form-select" required>
-            {% for cliente in clientes %}
-                <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
-            {% endfor %}
-        </select>
-    </div>
-
-    <div class="mb-3">
-        <label for="tipo">Tipo de Assistência</label>
-        <select name="tipo" class="form-select" required>
-            <option value="manual">Manual</option>
-            <option value="facial">Facial (IA)</option>
-        </select>
-    </div>
-
-    <button type="submit" class="btn btn-success">Salvar</button>
 </form>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const iaAutoBtn = document.getElementById('ia-auto-button');
+  const iaFormAuto = document.getElementById('ia-form-auto');
+  const urlNoPk = "{% url 'reconhecimento_one' %}";
+
+  iaAutoBtn.addEventListener('click', function () {
+    iaAutoBtn.disabled = true;
+    iaAutoBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Iniciando câmera...';
+    iaFormAuto.action = urlNoPk;
+    iaFormAuto.submit();
+  });
+});
+</script>
+
 {% endblock %}

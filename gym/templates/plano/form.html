@@ -1,32 +1,98 @@
 {% extends 'base.html' %}
 {% load widget_tweaks %}
 
+{% block title %}
+{% if form.instance.pk %}Editar Plano{% else %}Novo Plano{% endif %}
+{% endblock %}
+
 {% block content %}
-<h2>{% if form.instance.pk %}Editar Plano{% else %}Novo Plano{% endif %}</h2>
+<div class="container mt-4">
+    <h2 class="mb-4 text-center">
+        {% if form.instance.pk %}Editar Plano{% else %}Novo Plano{% endif %}
+    </h2>
 
-<form method="post">
-    {% csrf_token %}
+    <form method="post" novalidate>
+        {% csrf_token %}
 
-    {% for field in form %}
-        <div class="mb-3">
-            {{ field.label_tag }}
-
-            {% if field.errors %}
-                {{ field|add_class:"form-control is-invalid" }}
-            {% else %}
-                {{ field|add_class:"form-control" }}
-            {% endif %}
-
-            {% if field.errors %}
-                <div class="invalid-feedback">
-                    {% for error in field.errors %}
-                        {{ error }}<br>
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <!-- Campo Tipo -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">{{ form.tipo.label }}</label>
+                    {{ form.tipo|add_class:"form-select" }}
+                    {% for error in form.tipo.errors %}
+                        <div class="text-danger small">{{ error }}</div>
                     {% endfor %}
                 </div>
-            {% endif %}
-        </div>
-    {% endfor %}
 
-    <button type="submit" class="btn btn-primary">Salvar</button>
-</form>
+                <!-- Campo Nome -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">{{ form.nome.label }}</label>
+                    {{ form.nome|add_class:"form-control" }}
+                    {% for error in form.nome.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Campo Preço -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">{{ form.preco.label }}</label>
+                    {{ form.preco|add_class:"form-control" }}
+                    {% for error in form.preco.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Campo Descrição -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">{{ form.descricao.label }}</label>
+                    {{ form.descricao|add_class:"form-control" }}
+                    {% for error in form.descricao.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Campo Dias por Semana -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">{{ form.dias_por_semana.label }}</label>
+                    {{ form.dias_por_semana|add_class:"form-control" }}
+                    {% for error in form.dias_por_semana.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Campo Status -->
+                <div class="form-check mb-4">
+                    {{ form.status|add_class:"form-check-input" }}
+                    <label class="form-check-label">{{ form.status.label }}</label>
+                    {% for error in form.status.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Campo Serviços (Múltiplos) -->
+                <div class="mb-3">
+                    <label class="form-label fw-bold">{{ form.servicos.label }}</label>
+                    <div class="border rounded p-3 bg-light">
+                        {% for checkbox in form.servicos %}
+                            <div class="form-check">
+                                {{ checkbox.tag }}
+                                <label class="form-check-label">{{ checkbox.choice_label }}</label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% for error in form.servicos.errors %}
+                        <div class="text-danger small">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Botão Salvar -->
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary px-4">Salvar</button>
+                    <a href="{% url 'plano_list' %}" class="btn btn-secondary px-4">Cancelar</a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
 {% endblock %}

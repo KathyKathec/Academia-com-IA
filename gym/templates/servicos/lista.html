@@ -1,32 +1,33 @@
 {% extends 'base.html' %}
-{% block title %}Serviços{% endblock %}
-
 {% block content %}
-<h2>Serviços da Academia</h2>
-<a href="{% url 'servico_create' %}" class="btn btn-primary mb-3">Novo Serviço</a>
-
+<h2>Serviços</h2>
+<a href="{% url 'servico_create' %}" class="btn btn-success mb-3">Novo Serviço</a>
 <table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Nome</th>
-            <th>Descrição</th>
-            <th>Horário</th>
-            <th>Dias</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for s in servicos %}
-        <tr>
-            <td>{{ s.nome }}</td>
-            <td>{{ s.descricao }}</td>
-            <td>{{ s.horario }}</td>
-            <td>
-                {% for d in s.dias.all %}
-                    <span class="badge bg-info text-dark">{{ d.get_nome_display }}</span>
-                {% endfor %}
-            </td>
-        </tr>
+  <thead>
+    <tr><th>Nome</th><th>Horário</th><th>Dias</th><th>Planos</th><th>Ações</th></tr>
+  </thead>
+  <tbody>
+    {% for s in servicos %}
+    <tr>
+      <td>{{ s.nome }}</td>
+      <td>{% if s.horario %}{{ s.horario|time:"H:i" }}{% else %}-{% endif %}</td>
+      <td>
+        {% for d in s.dias.all %}
+          <span class="badge bg-secondary">{{ d.nome }}</span>
+        {% empty %}
+          <span class="text-muted">—</span>
         {% endfor %}
-    </tbody>
+      </td>
+      <td>
+        {% for p in s.planos.all %}
+          <span class="badge bg-info text-dark">{{ p.nome }}</span>
+        {% empty %}
+          <span class="text-muted">Sem planos</span>
+        {% endfor %}
+      </td>
+      <td><a href="{% url 'servico_edit' s.pk %}" class="btn btn-sm btn-warning">Editar</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
 {% endblock %}

@@ -4,7 +4,7 @@ from datetime import date
 
 # Create your models here.
 from django.db import models
-from django.contrib.auth.models import User  # importamos el User de Django
+from django.contrib.auth.models import User  # importamos o User de Django
 
 # -----------------------------
 # Tipo de Plano
@@ -47,13 +47,32 @@ class Plano(models.Model):
     nome = models.CharField(max_length=100)
     preco = models.DecimalField(max_digits=8, decimal_places=2)
     descricao = models.TextField(blank=True, null=True)
-    dias_por_semana = models.IntegerField(
-        validators=[MinValueValidator(1), MaxValueValidator(7)]
+    DIAS_POR_SEMANA_CHOICES = [(i, str(i)) for i in range(1, 8)]
+    dias_por_semana = models.PositiveSmallIntegerField(
+        choices=DIAS_POR_SEMANA_CHOICES,
+        default=3,
+        help_text="Número de dias por semana (1-7)"
     )
     status = models.BooleanField(default=True)  # ativo/desativado
     
+    # adiciona relação many-to-many via PlanoServico (já existe PlanoServico)
+    servicos = models.ManyToManyField(
+        'Servico',
+        through='PlanoServico',
+        related_name='planos',
+        blank=True
+    )
+
+    TIPO_DURACAO = [
+        ('mensal', 'Mensal'),
+        ('trimestral', 'Trimestral'),
+        ('semestral', 'Semestral'),
+        ('anual', 'Anual'),
+    ]
+    tipo_duracao = models.CharField(max_length=12, choices=TIPO_DURACAO, default='mensal')
+
     def __str__(self):
-        return f"{self.nome} - {self.tipo.nome}"
+        return getattr(self, 'nome', f'Plano {self.pk}')
 
 # -----------------------------
 # Cliente
@@ -112,10 +131,8 @@ class Pagamento(models.Model):
     total = models.DecimalField(max_digits=8, decimal_places=2, blank=True, null=True)  # calculado automaticamente
 
     def save(self, *args, **kwargs):
-        # Se o total não foi informado, calcular automaticamente
-        if self.plano:
-            preco_base = self.plano.preco
-            self.total = preco_base + (self.juros or 0) - (self.descontos or 0)
+        # Calcula o total: preço do plano + juros - descontos
+        self.total = self.plano.preco + (self.juros or 0) - (self.descontos or 0)
         super().save(*args, **kwargs)
 
 
@@ -156,9 +173,9 @@ class DiaSemana(models.Model):
 
 class Servico(models.Model):
     nome = models.CharField(max_length=100)
-    descricao = models.TextField(blank=True, null=True)
-    horario = models.CharField(max_length=100, blank=True, null=True)
-    dias = models.ManyToManyField(DiaSemana, related_name="servicos")
+    descricao = models.TextField(blank=True)
+    horario = models.TimeField(null=True, blank=True)  # validação nativa de horário
+    dias = models.ManyToManyField('DiaSemana', blank=True, related_name='servicos')
 
     def __str__(self):
         return self.nome

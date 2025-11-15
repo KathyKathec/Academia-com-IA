@@ -4,10 +4,22 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from datetime import date, timedelta
 import csv
-from .models import Assistencia
+import subprocess
+import sys
+import os
+from django.contrib import messages
+from .models import Assistencia, ClientePlano
 from .models import Servico, DiaSemana, PlanoServico
 from .models import Cliente, Plano, Pagamento
-from .forms import ClienteForm, PlanoForm, PagamentoForm, ClientePlanoFormSet
+from .forms import ClienteForm, PlanoForm, PagamentoForm, ClientePlanoFormSet, ServicoForm
+from .models import Servico
+from threading import Lock
+from django.db import models
+from django.db.models import Q
+
+# Lock para evitar múltiplas chamadas simultâneas
+capture_lock = Lock()
+capture_processes = {}  # rastreia processos em execução
 
 # Home
 @login_required
@@ -25,10 +37,21 @@ def criar_cliente(request):
             cliente.status = True  # cliente ativo
             cliente.save()
 
-            # Agora inicializa o formset com a instância do cliente
+            # inicializa o formset com a instância do cliente
             formset = ClientePlanoFormSet(request.POST, instance=cliente)
             if formset.is_valid():
-                formset.save()
+                # Salva os planos SEM calcular data_fim
+                planos = formset.save(commit=False)
+                for cliente_plano in planos:
+                    # Define data_inicio mas NÃO define data_fim
+                    # data_fim será definida quando fizer o primeiro pagamento
+                    if not cliente_plano.data_inicio:
+                        cliente_plano.data_inicio = date.today()
+                    cliente_plano.ativo = False  # Inativo até o primeiro pagamento
+                    cliente_plano.data_fim = None  # Sem vencimento até o pagamento
+                    cliente_plano.save()
+                
+                messages.warning(request, f"Cliente {cliente.nome} criado! Registre o primeiro pagamento para ativar o plano.")
                 return redirect('lista_clientes')
             # se formset não for válido, ele vai mostrar os erros
         else:
@@ -84,23 +107,19 @@ def lista_clientes(request):
     clientes_info = []
     
     for cliente in clientes:
+        # DEBUG: imprime no console
         plano_ativo = cliente.clienteplano_set.filter(ativo=True).first()
-        
+        print(f"Cliente: {cliente.nome}")
+        print(f"Plano ativo: {plano_ativo}")
         if plano_ativo:
-            data_inicio = plano_ativo.data_inicio
-            tipo_plano = plano_ativo.plano.tipo.nome  # assumindo que tipo tem campo nome
-            
-            # Calcula duração baseado no tipo do plano
-            if 'anual' in tipo_plano.lower():
-                duracao = 365
-            elif 'semestral' in tipo_plano.lower():
-                duracao = 180
-            elif 'trimestral' in tipo_plano.lower():
-                duracao = 90
-            else:  # mensal
-                duracao = 30
-            
-            data_vencimento = data_inicio + timedelta(days=duracao)
+            print(f"  - Plano: {plano_ativo.plano.nome}")
+            print(f"  - Data fim: {plano_ativo.data_fim}")
+            print(f"  - Ativo: {plano_ativo.ativo}")
+        print("---")
+        
+        if plano_ativo and plano_ativo.data_fim:
+            # USA data_fim diretamente (já foi calculada no pagamento)
+            data_vencimento = plano_ativo.data_fim
             dias_restantes = (data_vencimento - date.today()).days
 
             if dias_restantes < 0:
@@ -111,7 +130,7 @@ def lista_clientes(request):
                 status_vencimento = f"Vence em {dias_restantes} dias"
             else:
                 status_class = "text-success"
-                status_vencimento = f"Em dia (vence em {dias_restantes} dias)"
+                status_vencimento = f"Vence em {dias_restantes} dias"
         else:
             status_class = "text-secondary"
             status_vencimento = "Sem plano ativo"
@@ -119,6 +138,7 @@ def lista_clientes(request):
         clientes_info.append({
             'pk': cliente.pk,
             'nome': cliente.nome,
+            'imagem': cliente.imagem,
             'identidade': cliente.identidade,
             'plano': plano_ativo.plano.nome if plano_ativo else "-",
             'status_vencimento': status_vencimento,
@@ -164,7 +184,9 @@ def plano_create(request):
     if request.method == 'POST':
         form = PlanoForm(request.POST)
         if form.is_valid():
-            form.save()
+            plano = form.save(commit=False)
+            plano.save()
+            form.save_m2m()  # salva as relações com serviços
             return redirect('plano_list')
     else:
         form = PlanoForm()
@@ -185,80 +207,173 @@ def plano_edit(request, pk):
 
 
 # Criar pagamento
-@login_required
-def pagamento_create(request):
-    planos = Plano.objects.filter(status=True)
-    clientes = Cliente.objects.filter(status=True)
 
-    if request.method == "POST":
+@login_required
+def criar_pagamento(request):
+    planos = Plano.objects.all()
+    clientes = Cliente.objects.all()
+    
+    if request.method == 'POST':
         form = PagamentoForm(request.POST)
         if form.is_valid():
             pagamento = form.save(commit=False)
-            pagamento.usuario = request.user  # atribui o usuário logado
-            pagamento.save()
+            pagamento.usuario = request.user
+            pagamento.save()  # O total é calculado automaticamente no save() do modelo
+            
+        
+            cliente = pagamento.cliente
+            plano = pagamento.plano
+            duracao_dias = plano.tipo.dias
+            
+            # Data do pagamento
+            data_pagamento = pagamento.data.date() if hasattr(pagamento.data, 'date') else pagamento.data
+            
+            # Busca ou cria ClientePlano
+            cliente_plano, created = ClientePlano.objects.get_or_create(
+                cliente=cliente,
+                plano=plano,
+                defaults={
+                    'data_inicio': data_pagamento,
+                    'data_fim': data_pagamento + timedelta(days=duracao_dias),
+                    'ativo': True,
+                    'status_vencimento': 'em dia'
+                }
+            )
+            
+            if not created:
+                # Se já existe, atualiza
+                if cliente_plano.data_fim and cliente_plano.data_fim >= data_pagamento and cliente_plano.ativo:
+                    # Ainda não venceu: estende
+                    cliente_plano.data_fim = cliente_plano.data_fim + timedelta(days=duracao_dias)
+                else:
+                    # Já venceu: renova
+                    cliente_plano.data_inicio = data_pagamento
+                    cliente_plano.data_fim = data_pagamento + timedelta(days=duracao_dias)
+                    cliente_plano.ativo = True
+                    cliente_plano.status_vencimento = 'em dia'
+                cliente_plano.save()
+            
+            nova_data = cliente_plano.data_fim
+            messages.success(request, f'✅ Pagamento registrado! Plano: {plano.nome} | Vencimento: {nova_data.strftime("%d/%m/%Y")}')
             return redirect('pagamento_list')
     else:
         form = PagamentoForm()
-
+    
     return render(request, 'pagamento/form.html', {
         'form': form,
         'planos': planos,
-        'clientes': clientes
-    })
+        'clientes': clientes})
 
 
 # Listar pagamentos
 def pagamento_list(request):
-    pagamentos = Pagamento.objects.all()
+    # Pega o termo de busca
+    search = request.GET.get('search', '')
     
-    return render(request, 'pagamento/lista.html', {'pagamentos': pagamentos})
+    pagamentos = Pagamento.objects.select_related('cliente', 'plano', 'usuario').all()
+    
+    # Aplica filtro se houver busca
+    if search:
+        pagamentos = pagamentos.filter(
+            models.Q(cliente__nome__icontains=search) | 
+            models.Q(cliente__identidade__icontains=search)
+        )
+    
+    pagamentos = pagamentos.order_by('-data')
+    
+    return render(request, 'pagamento/lista.html', {
+        'pagamentos': pagamentos,
+        'search': search
+    })
 
 
 # Exportar pagamentos para CSV
 @login_required
 def pagamento_csv(request):
-    pagamentos = Pagamento.objects.all()
-    response = HttpResponse(content_type='text/csv')
+    pagamentos = Pagamento.objects.select_related('cliente', 'plano', 'plano__tipo', 'usuario').all()
+    
+    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
     response['Content-Disposition'] = 'attachment; filename="pagamentos.csv"'
-    writer = csv.writer(response)
-    writer.writerow(['Cliente', 'Plano', 'Método', 'Total', 'Data'])
-    for pagamento in pagamentos:
+    
+    writer = csv.writer(response, delimiter=';') 
+    
+    # Cabeçalho
+    writer.writerow([
+        'ID',
+        'Cliente',
+        'Identidade',
+        'Plano',
+        'Tipo de Plano',
+        'Método',
+        'Valor do Plano',
+        'Juros',
+        'Descontos',
+        'Total Pago',
+        'Data/Hora',
+        'Registrado por'
+    ])
+    
+    # dados formatados
+    for p in pagamentos:
         writer.writerow([
-            str(pagamento.cliente),
-            str(pagamento.plano),
-            str(pagamento.metodo),
-            str(pagamento.total),
-            pagamento.data.strftime('%d/%m/%Y %H:%M')
+            p.id,
+            p.cliente.nome,
+            p.cliente.identidade,
+            p.plano.nome,
+            p.plano.tipo.get_nome_display(),
+            p.get_metodo_display(),
+            f'R$ {p.plano.preco:.2f}'.replace('.', ','),
+            f'R$ {(p.juros or 0):.2f}'.replace('.', ','),
+            f'R$ {(p.descontos or 0):.2f}'.replace('.', ','),
+            f'R$ {p.total:.2f}'.replace('.', ','),
+            p.data.strftime('%d/%m/%Y %H:%M:%S'),
+            p.usuario.username if p.usuario else 'Sistema'
         ])
+    
     return response
 
+# Serviço views
 @login_required
 def servico_list(request):
-    servicos= Servico.objects.prefetch_related('dias').all()
-    return render(request, 'servicos/lista.html',{'servicos': servicos})
+    servicos = Servico.objects.prefetch_related('dias', 'planos').all()
+    return render(request, 'servicos/lista.html', {'servicos': servicos})
 
 @login_required
 def servico_create(request):
-    dias= DiaSemana.objects.all()
-    planos = Plano.objects.filter(status=True)
+    if request.method == 'POST':
+        form = ServicoForm(request.POST)
+        if form.is_valid():
+            servico = form.save(commit=False)
+            servico.save()
+            # salva M2M se disponível
+            if hasattr(form, 'save_m2m'):
+                form.save_m2m()
+            # associa planos se o campo existir no form
+            planos_qs = form.cleaned_data.get('planos') if 'planos' in form.cleaned_data else None
+            if planos_qs is not None:
+                servico.planos.set(planos_qs)
+            return redirect('servico_list')
+    else:
+        form = ServicoForm()
+    return render(request, 'servicos/form.html', {'form': form})
 
-    if request.method == "POST":
-        nome = request.POST.get('nome')
-        descricao=request.POST.get('descricao')
-        horario = request.POST.get('horario')
-        dias_selecionados= request.POST.getlist('dias')
-        planos_selecionados= request.POST.getlist('planos')
-
-        servico= Servico.objects.create(nome=nome, descricao=descricao, horario=horario)
-        servico.dias.set(dias_selecionados)
-
-        #para asociar planos
-        for plano_id in planos_selecionados:
-            plano= get_object_or_404(Plano, pk=plano_id)
-            PlanoServico.objects.create(plano=plano, servico=servico)
-
-        return redirect('servico_list')
-    return render(request, 'servicos/form.html', {'dias':dias, 'planos':planos})
+@login_required
+def servico_edit(request, pk):
+    servico = get_object_or_404(Servico, pk=pk)
+    if request.method == 'POST':
+        form = ServicoForm(request.POST, instance=servico)
+        if form.is_valid():
+            servico = form.save(commit=False)
+            servico.save()
+            if hasattr(form, 'save_m2m'):
+                form.save_m2m()
+            planos_qs = form.cleaned_data.get('planos') if 'planos' in form.cleaned_data else None
+            if planos_qs is not None:
+                servico.planos.set(planos_qs)
+            return redirect('servico_list')
+    else:
+        form = ServicoForm(instance=servico)
+    return render(request, 'servicos/form.html', {'form': form, 'servico': servico})
 
 @login_required
 def assistencia_list(request):
@@ -280,3 +395,67 @@ def assistencia_create(request):
         )
         return redirect('assistencia_list')
     return render(request, 'assistencias/form.html', {'clientes':clientes})
+
+@login_required
+def coletar_imagens_cliente(request, pk):
+    cliente = get_object_or_404(Cliente, pk=pk)
+    base = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'academia', 'reconhecimento'))
+    script = os.path.join(base, 'coleta.py')
+    python_exec = sys.executable
+    
+    creationflags = subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0
+    
+    try:
+        proc = subprocess.Popen([python_exec, script, '--id', str(pk), '--count', '30'], creationflags=creationflags)
+        messages.success(request, f"Coleta iniciada para {cliente.nome}. Feche ESC para terminar.")
+    except Exception as exc:
+        messages.error(request, f"Erro: {exc}")
+    
+    return redirect('cliente_detail', pk=pk)
+
+@login_required
+def treinar_modelo(request):
+    if request.method != 'POST':
+        return redirect('lista_clientes')
+    
+    base = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'academia', 'reconhecimento'))
+    script = os.path.join(base, 'treina.py')
+    python_exec = sys.executable
+    
+    creationflags = subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0
+    
+    try:
+        proc = subprocess.run([python_exec, script], capture_output=True, text=True, timeout=120, creationflags=creationflags)
+        output = (proc.stdout or proc.stderr).strip()
+        messages.success(request, output or "Modelo treinado com sucesso!")
+    except Exception as exc:
+        messages.error(request, f"Erro: {exc}")
+    
+    return redirect(request.META.get('HTTP_REFERER') or 'lista_clientes')
+
+@login_required
+def reconhecimento_once_view(request, pk=None):
+    if request.method != 'POST':
+        return redirect('lista_clientes')
+    
+    if pk:
+        get_object_or_404(Cliente, pk=pk)
+    
+    base = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'academia', 'reconhecimento'))
+    script = os.path.join(base, 'reconhece.py')
+    python_exec = sys.executable
+    
+    creationflags = subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0
+    
+    args = [python_exec, script, '--timeout', '25', '--cooldown', '3600']
+    if pk:
+        args += ['--target-id', str(pk)]
+    
+    try:
+        proc = subprocess.run(args, capture_output=True, text=True, timeout=40, creationflags=creationflags)
+        output = (proc.stdout or proc.stderr).strip()
+        messages.success(request, output or "Reconhecimento finalizado.")
+    except Exception as exc:
+        messages.error(request, f"Erro: {exc}")
+    
+    return redirect(request.META.get('HTTP_REFERER') or 'lista_clientes')

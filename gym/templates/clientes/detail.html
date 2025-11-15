@@ -1,69 +1,142 @@
 {% extends "base.html" %}
-
-{% block title %}Detalhes do Cliente{% endblock %}
+{% block title %}{{ cliente.nome }}{% endblock %}
 
 {% block content %}
-<nav>
-    <a href="{% url 'home' %}">Início</a> |
-    <a href="{% url 'lista_clientes' %}">Clientes</a> |
-    <a href="{% url 'editar_cliente' cliente.pk %}">Editar</a>
-</nav>
+<div class="container-fluid mt-4">
+    <nav class="mb-3">
+        <a href="{% url 'home' %}"><i class="bi bi-house"></i> Início</a> |
+        <a href="{% url 'lista_clientes' %}"><i class="bi bi-people"></i> Clientes</a>
+    </nav>
 
-<div class="container mt-4">
-    <h2>Cliente: {{ cliente.nome }}</h2>
-
-    <!-- DADOS PESSOAIS -->
-    <div class="card mb-4">
-        <div class="card-header">Dados Pessoais</div>
-        <div class="card-body">
-            <p><strong>Identidade:</strong> {{ cliente.identidade }}</p>
-            <p><strong>Email:</strong> {{ cliente.email|default:"-" }}</p>
-            <p><strong>Telefone:</strong> {{ cliente.telefone|default:"-" }}</p>
-            <p><strong>Idade:</strong> {{ cliente.idade|default:"-" }}</p>
-            <p><strong>Sexo:</strong> {{ cliente.sexo|default:"-" }}</p>
-            <p><strong>Status:</strong>
-                {% if cliente.status %}
-                    <span class="badge bg-success">Ativo</span>
-                {% else %}
-                    <span class="badge bg-danger">Inativo</span>
-                {% endif %}
-            </p>
-            {% if cliente.imagem %}
-                <p><img src="{{ cliente.imagem.url }}" alt="Foto de {{ cliente.nome }}" width="150"></p>
-            {% endif %}
+    <div class="row">
+        <!-- Card do cliente -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-lg border-0">
+                <div class="card-body text-center">
+                    {% if cliente.imagem %}
+                        <div class="mb-3">
+                            <img src="{{ cliente.imagem.url }}" alt="{{ cliente.nome }}" class="rounded-circle border border-4 border-primary" style="width:150px;height:150px;object-fit:cover;">
+                        </div>
+                    {% else %}
+                        <div class="mb-3">
+                            <div class="rounded-circle bg-light border border-4 border-primary d-inline-flex align-items-center justify-content-center" style="width:150px;height:150px;">
+                                <i class="bi bi-person-fill" style="font-size:3rem;color:#999;"></i>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <h3 class="fw-bold text-dark">{{ cliente.nome }}</h3>
+                    <p class="text-muted mb-3">{{ cliente.identidade }}</p>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- PLANOS -->
-    <div class="card mb-4">
-        <div class="card-header">Planos do Cliente</div>
-        <div class="card-body">
-            {% if planos %}
-                <ul class="list-group">
-                    {% for cp in planos %}
-                        <li class="list-group-item">
-                            <strong>{{ cp.plano.nome }}</strong><br>
-                            Início: {{ cp.data_inicio|date:"d/m/Y" }}<br>
-                            Fim: {{ cp.data_fim|date:"d/m/Y"|default:"Não definido" }}<br>
-                            Status: {{ cp.status_vencimento }}
-                        </li>
+        <!-- Detalhes e ações -->
+        <div class="col-md-8">
+            <!-- Plano ativo -->
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-header bg-success text-white fw-bold">
+                    <i class="bi bi-calendar-check"></i> Plano Ativo
+                </div>
+                <div class="card-body">
+                    {% for plano in planos_ativos %}
+                        <h5>{{ plano.plano.nome }}</h5>
+                        <p class="mb-1"><strong>Início:</strong> {{ plano.data_inicio|date:"d/m/Y" }}</p>
+                        <p class="mb-1"><strong>Vencimento:</strong> {{ plano.data_fim|date:"d/m/Y" }}</p>
+                        <p><strong>Status:</strong> 
+                            {% if plano.data_fim < hoje %}
+                                <span class="badge bg-danger">Vencido</span>
+                            {% else %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% endif %}
+                        </p>
+                    {% empty %}
+                        <p class="text-muted">Sem plano ativo.</p>
                     {% endfor %}
-                </ul>
-            {% else %}
-                <p>Nenhum plano associado.</p>
-            {% endif %}
+                </div>
+            </div>
+
+            <!-- Ações -->
+            <div class="card shadow-lg border-0 mb-4">
+                <div class="card-header bg-info text-white fw-bold">
+                    <i class="bi bi-gear"></i> Ações
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'editar_cliente' cliente.pk %}" class="btn btn-warning btn-lg fw-bold">
+                            <i class="bi bi-pencil-square"></i> Editar Cliente
+                        </a>
+
+                        <!-- Coletar Imagens -->
+                        <form method="post" action="{% url 'coletar_imagens_cliente' cliente.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-secondary btn-lg fw-bold w-100">
+                                <i class="bi bi-camera"></i> Coletar Imagens (Câmera)
+                            </button>
+                        </form>
+
+                        <!-- Treinar Modelo -->
+                        <form method="post" action="{% url 'treinar_modelo' %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-info btn-lg fw-bold w-100">
+                                <i class="bi bi-brain"></i> Treinar Modelo
+                            </button>
+                        </form>
+
+                        <!-- Registrar Presença (IA) -->
+                        <form method="post" action="{% url 'reconhecimento_one' %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary btn-lg fw-bold w-100">
+                                <i class="bi bi-camera-fill"></i> Registrar Presença (IA)
+                            </button>
+                        </form>
+
+                        <a href="{% url 'deletar_cliente' cliente.pk %}" class="btn btn-danger btn-lg fw-bold">
+                            <i class="bi bi-trash"></i> Deletar Cliente
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- AVISOS DE VENCIMENTO -->
-    {% if avisos %}
-        <div class="alert alert-warning">
-            <ul>
-                {% for aviso in avisos %}
-                    <li>{{ aviso }}</li>
-                {% endfor %}
-            </ul>
+    <!-- Pagamentos -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-warning text-dark fw-bold">
+                    <i class="bi bi-credit-card"></i> Histórico de Pagamentos
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Plano</th>
+                                    <th>Método</th>
+                                    <th>Valor</th>
+                                    <th>Data</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pagamento in pagamentos %}
+                                <tr>
+                                    <td><strong>{{ pagamento.plano.nome }}</strong></td>
+                                    <td>{{ pagamento.metodo }}</td>
+                                    <td><strong class="text-success">R$ {{ pagamento.total|floatformat:2 }}</strong></td>
+                                    <td>{{ pagamento.data|date:"d/m/Y H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">Sem pagamentos registrados.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
-    {% endif %}
+    </div>
 </div>
+
 {% endblock %}

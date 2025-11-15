@@ -18,11 +18,12 @@ urlpatterns = [
     path('planos/<int:pk>/editar/', views.plano_edit, name='plano_edit'),
 
     path('pagamentos/', views.pagamento_list, name='pagamento_list'),
-    path('pagamentos/novo/', views.pagamento_create, name='pagamento_create'),
     path('pagamentos/csv/', views.pagamento_csv, name='pagamento_csv'),
+    path('pagamentos/novo/', views.criar_pagamento, name='criar_pagamento'),
 
     path('servicos/', views.servico_list, name='servico_list'),
     path('servicos/novo/', views.servico_create, name='servico_create'),
+    path('servicos/<int:pk>/editar/', views.servico_edit, name='servico_edit'),
 
     path('assistencias/', views.assistencia_list, name='assistencia_list'),
     path('assistencias/nova/', views.assistencia_create, name='assistencia_create'),
@@ -35,3 +36,12 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+urlpatterns += [
+    path('clientes/<int:pk>/coletar/', views.coletar_imagens_cliente, name='coletar_imagens_cliente'),
+    path('reconhecimento/treinar/', views.treinar_modelo, name='treinar_modelo'),
+    # chama reconhecimento para um cliente específico (POST)
+    path('reconhecimento/one/<int:pk>/', views.reconhecimento_once_view, name='reconhecimento_one_cliente'),
+    # opcional: rota sem target (não necessária se sempre for por cliente)
+    path('reconhecimento/one/', views.reconhecimento_once_view, name='reconhecimento_one'),
+]
