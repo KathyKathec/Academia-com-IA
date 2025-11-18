@@ -210,9 +210,6 @@ def plano_edit(request, pk):
 
 @login_required
 def criar_pagamento(request):
-    planos = Plano.objects.all()
-    clientes = Cliente.objects.all()
-    
     if request.method == 'POST':
         form = PagamentoForm(request.POST)
         if form.is_valid():
@@ -220,7 +217,6 @@ def criar_pagamento(request):
             pagamento.usuario = request.user
             pagamento.save()  # O total é calculado automaticamente no save() do modelo
             
-        
             cliente = pagamento.cliente
             plano = pagamento.plano
             duracao_dias = plano.tipo.dias
@@ -228,7 +224,21 @@ def criar_pagamento(request):
             # Data do pagamento
             data_pagamento = pagamento.data.date() if hasattr(pagamento.data, 'date') else pagamento.data
             
-            # Busca ou cria ClientePlano
+            # Desativa planos anteriores DIFERENTES
+            planos_antigos = ClientePlano.objects.filter(
+                cliente=cliente,
+                ativo=True
+            ).exclude(plano=plano)
+            
+            if planos_antigos.exists():
+                for plano_antigo in planos_antigos:
+                    plano_antigo.ativo = False
+                    plano_antigo.data_fim = data_pagamento  # Encerra na data do novo pagamento
+                    plano_antigo.status_vencimento = 'cancelado'
+                    plano_antigo.save()
+                    print(f"❌ Plano desativado: {plano_antigo.plano.nome} (Cliente: {cliente.nome})")
+            
+            # Busca ou cria ClientePlano para o plano atual
             cliente_plano, created = ClientePlano.objects.get_or_create(
                 cliente=cliente,
                 plano=plano,
@@ -241,12 +251,12 @@ def criar_pagamento(request):
             )
             
             if not created:
-                # Se já existe, atualiza
+                # Se já existe este plano, renova/estende
                 if cliente_plano.data_fim and cliente_plano.data_fim >= data_pagamento and cliente_plano.ativo:
                     # Ainda não venceu: estende
                     cliente_plano.data_fim = cliente_plano.data_fim + timedelta(days=duracao_dias)
                 else:
-                    # Já venceu: renova
+                    # Já venceu ou estava inativo: renova
                     cliente_plano.data_inicio = data_pagamento
                     cliente_plano.data_fim = data_pagamento + timedelta(days=duracao_dias)
                     cliente_plano.ativo = True
@@ -255,14 +265,25 @@ def criar_pagamento(request):
             
             nova_data = cliente_plano.data_fim
             messages.success(request, f'✅ Pagamento registrado! Plano: {plano.nome} | Vencimento: {nova_data.strftime("%d/%m/%Y")}')
+            
+            # ✅ Informa se houve troca de plano
+            if planos_antigos.exists():
+                planos_desc = ", ".join([p.plano.nome for p in planos_antigos])
+                messages.info(request, f'ℹ️ Plano(s) anterior(es) desativado(s): {planos_desc}')
+            
             return redirect('pagamento_list')
     else:
         form = PagamentoForm()
     
+    # ✅ MANTÉM AS LISTAS para o template
+    planos = Plano.objects.all()
+    clientes = Cliente.objects.all()
+    
     return render(request, 'pagamento/form.html', {
         'form': form,
         'planos': planos,
-        'clientes': clientes})
+        'clientes': clientes
+    })
 
 
 # Listar pagamentos
@@ -375,6 +396,7 @@ def servico_edit(request, pk):
         form = ServicoForm(instance=servico)
     return render(request, 'servicos/form.html', {'form': form, 'servico': servico})
 
+#Assistencias
 @login_required
 def assistencia_list(request):
     assistencias = Assistencia.objects. select_related('cliente','usuario').order_by('-data','-hora')
@@ -396,6 +418,7 @@ def assistencia_create(request):
         return redirect('assistencia_list')
     return render(request, 'assistencias/form.html', {'clientes':clientes})
 
+#coleta de imagens
 @login_required
 def coletar_imagens_cliente(request, pk):
     cliente = get_object_or_404(Cliente, pk=pk)
@@ -413,6 +436,7 @@ def coletar_imagens_cliente(request, pk):
     
     return redirect('cliente_detail', pk=pk)
 
+# treinamento de modelo
 @login_required
 def treinar_modelo(request):
     if request.method != 'POST':
@@ -433,29 +457,98 @@ def treinar_modelo(request):
     
     return redirect(request.META.get('HTTP_REFERER') or 'lista_clientes')
 
+# reconhecimento
 @login_required
-def reconhecimento_once_view(request, pk=None):
-    if request.method != 'POST':
-        return redirect('lista_clientes')
-    
-    if pk:
-        get_object_or_404(Cliente, pk=pk)
+def reconhecimento_once_view(request):
+    """Executa reconhecimento facial uma vez"""
     
     base = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'academia', 'reconhecimento'))
-    script = os.path.join(base, 'reconhece.py')
-    python_exec = sys.executable
+    reconhece_path = os.path.join(base, 'reconhece.py')
+    trainer_path = os.path.join(base, 'trainer.yml')
     
-    creationflags = subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0
+    # Validações
+    if not os.path.exists(trainer_path):
+        messages.error(request, '❌ Modelo não treinado! Treine o modelo primeiro.')
+        return redirect('assistencia_list')
     
-    args = [python_exec, script, '--timeout', '25', '--cooldown', '3600']
-    if pk:
-        args += ['--target-id', str(pk)]
+    if not os.path.exists(reconhece_path):
+        messages.error(request, f'❌ Script não encontrado: {reconhece_path}')
+        return redirect('assistencia_list')
     
     try:
-        proc = subprocess.run(args, capture_output=True, text=True, timeout=40, creationflags=creationflags)
-        output = (proc.stdout or proc.stderr).strip()
-        messages.success(request, output or "Reconhecimento finalizado.")
-    except Exception as exc:
-        messages.error(request, f"Erro: {exc}")
+        python_exec = sys.executable
+        # Abre em nova janela no Windows
+        creationflags = subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0
+        
+        subprocess.Popen([python_exec, reconhece_path], creationflags=creationflags)
+        messages.success(request, '🎥 Câmera aberta! Pressione Q para fechar.')
+        
+    except Exception as e:
+        messages.error(request, f'❌ Erro ao abrir câmera: {str(e)}')
     
-    return redirect(request.META.get('HTTP_REFERER') or 'lista_clientes')
+    return redirect('assistencia_list')  # ✅ Volta para lista de assistências
+
+@login_required
+def assistencia_csv_export(request):
+    """Exporta assistências para CSV"""
+    assistencias = Assistencia.objects.select_related('cliente', 'usuario').order_by('-data', '-hora')
+    
+    response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+    response['Content-Disposition'] = f'attachment; filename="assistencias_{date.today().strftime("%Y%m%d")}.csv"'
+    
+    writer = csv.writer(response, delimiter=';')
+    
+    # Cabeçalho
+    writer.writerow([
+        'ID',
+        'Cliente',
+        'Identidade',
+        'Tipo',
+        'Data',
+        'Hora',
+        'Registrado por'
+    ])
+    
+    # Dados
+    for a in assistencias:
+        writer.writerow([
+            a.id,
+            a.cliente.nome,
+            a.cliente.identidade,
+            'IA Facial' if a.tipo == 'facial' else 'Manual',
+            a.data.strftime('%d/%m/%Y'),
+            a.hora.strftime('%H:%M:%S'),
+            a.usuario.username if a.usuario else 'Sistema'
+        ])
+    
+    return response
+
+@login_required
+def assistencia_limpar(request):
+    """Limpa todas as assistências após confirmação"""
+    if request.method == 'POST':
+        count = Assistencia.objects.count()
+        Assistencia.objects.all().delete()
+        messages.success(request, f'🗑️ {count} assistência(s) deletada(s) com sucesso!')
+        return redirect('assistencia_list')
+    
+    # Se não for POST, mostra página de confirmação
+    total = Assistencia.objects.count()
+    return render(request, 'assistencias/confirmar_limpar.html', {'total': total})
+
+@login_required
+def pagamento_limpar(request):
+    """Limpa todos os pagamentos após confirmação"""
+    if request.method == 'POST':
+        count = Pagamento.objects.count()
+        Pagamento.objects.all().delete()
+        messages.success(request, f'🗑️ {count} pagamento(s) deletado(s) com sucesso!')
+        return redirect('pagamento_list')
+    
+    # Se não for POST, mostra página de confirmação
+    total = Pagamento.objects.count()
+    total_valor = sum(p.total for p in Pagamento.objects.all())
+    return render(request, 'pagamento/confirmar_limpar.html', {
+        'total': total,
+        'total_valor': total_valor
+    })

@@ -9,9 +9,16 @@
                 <h2 class="mb-0 text-white fw-bold">
                     <i class="bi bi-check2-square"></i> Assistências
                 </h2>
-                <a href="{% url 'assistencia_create' %}" class="btn btn-light btn-sm fw-bold">
-                    <i class="bi bi-plus-circle"></i> Nova Assistência
-                </a>
+                <div>
+                    <!-- Reconhecimento Facial -->
+                    <a href="{% url 'reconhecimento_one' %}" class="btn btn-info btn-sm fw-bold me-2">
+                        <i class="bi bi-camera-fill"></i> Reconhecimento Facial
+                    </a>
+                    <!-- Nova Assistência -->
+                    <a href="{% url 'assistencia_create' %}" class="btn btn-light btn-sm fw-bold">
+                        <i class="bi bi-plus-circle"></i> Nova Assistência
+                    </a>
+                </div>
             </div>
         </div>
 
@@ -57,6 +64,23 @@
                     </tbody>
                 </table>
             </div>
+            
+            <!-- ✅ BOTÕES DE EXPORTAR E LIMPAR -->
+            {% if assistencias %}
+            <div class="card-footer bg-light d-flex justify-content-between align-items-center">
+                <div class="text-muted">
+                    <i class="bi bi-info-circle"></i> Total: <strong>{{ assistencias|length }}</strong> assistência(s)
+                </div>
+                <div>
+                    <a href="{% url 'assistencia_csv_export' %}" class="btn btn-success btn-sm me-2">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
+                    </a>
+                    <a href="{% url 'assistencia_limpar' %}" class="btn btn-danger btn-sm">
+                        <i class="bi bi-trash"></i> Limpar Assistências
+                    </a>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

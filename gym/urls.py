@@ -20,6 +20,7 @@ urlpatterns = [
     path('pagamentos/', views.pagamento_list, name='pagamento_list'),
     path('pagamentos/csv/', views.pagamento_csv, name='pagamento_csv'),
     path('pagamentos/novo/', views.criar_pagamento, name='criar_pagamento'),
+    path('pagamentos/limpar/', views.pagamento_limpar, name='pagamento_limpar'),
 
     path('servicos/', views.servico_list, name='servico_list'),
     path('servicos/novo/', views.servico_create, name='servico_create'),
@@ -27,7 +28,12 @@ urlpatterns = [
 
     path('assistencias/', views.assistencia_list, name='assistencia_list'),
     path('assistencias/nova/', views.assistencia_create, name='assistencia_create'),
+    path('assistencias/csv/', views.assistencia_csv_export, name='assistencia_csv_export'),
+    path('assistencias/limpar/', views.assistencia_limpar, name='assistencia_limpar'),
 
+    path('coletar_imagens_cliente', views.coletar_imagens_cliente, name='coletar_imagens_cliente'),
+    path('reconhecimento_one', views.reconhecimento_once_view, name='reconhecimento_once_view'),
+    path('treinar_modelo', views.treinar_modelo, name='treinar_modelo'),
 
     path('login/', auth_views.LoginView.as_view(template_name='gym/login.html'), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),

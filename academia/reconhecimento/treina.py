@@ -37,6 +37,7 @@ def carregar_imagens():
         except ValueError:
             continue
         
+        count = 0
         for img_name in os.listdir(pasta_path):
             if not img_name.lower().endswith('.jpg'):
                 continue
@@ -44,12 +45,30 @@ def carregar_imagens():
             img_path = os.path.join(pasta_path, img_name)
             gray_img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
             if gray_img is None:
+                print(f"⚠️  Imagem corrompida: {img_path}")
                 continue
             
-            faces = detector.detectMultiScale(gray_img)
+            faces = detector.detectMultiScale(
+                gray_img,
+                scaleFactor=1.1,
+                minNeighbors=5,
+                minSize=(100, 100)
+            )
+            
+            if len(faces) == 0:
+                print(f"⚠️  Nenhuma face detectada em: {img_path}")
+                continue
+            
             for (x, y, w, h) in faces:
-                face_samples.append(gray_img[y:y+h, x:x+w])
+                # ✅ NORMALIZA O TAMANHO DA FACE (muito importante!)
+                face_roi = gray_img[y:y+h, x:x+w]
+                face_resized = cv2.resize(face_roi, (200, 200))
+                
+                face_samples.append(face_resized)
                 ids.append(client_id)
+                count += 1
+        
+        print(f"✅ Cliente ID {client_id}: {count} faces processadas")
     
     return face_samples, ids
 
@@ -60,16 +79,23 @@ if len(face_samples) == 0:
     print("❌ Nenhuma imagem encontrada!")
     sys.exit(1)
 
-print(f"✅ {len(face_samples)} faces carregadas de {len(set(ids))} clientes\n")
+print(f"\n✅ {len(face_samples)} faces carregadas de {len(set(ids))} clientes\n")
 
-print("[INFO] Treinando modelo...")
-recognizer = cv2.face.LBPHFaceRecognizer_create()
+print("[INFO] Treinando modelo LBPH...")
+recognizer = cv2.face.LBPHFaceRecognizer_create(
+    radius=1,
+    neighbors=8,
+    grid_x=8,
+    grid_y=8
+)
 recognizer.train(face_samples, np.array(ids))
 recognizer.write(trainer_path)
 
 print(f"✅ Modelo treinado e salvo em: {trainer_path}\n")
 
 clientes_treinados = Cliente.objects.filter(id__in=set(ids))
-print(f"🧠 Clientes treinados: {len(clientes_treinados)}")
+print(f"🧠 Clientes identificáveis: {len(clientes_treinados)}")
 for c in clientes_treinados:
-    print(f"   - {c.id}: {c.nome}")
+    print(f"   - ID {c.id}: {c.nome}")
+
+print("\n💡 Para testar, execute: python academia/reconhecimento/reconhece.py")

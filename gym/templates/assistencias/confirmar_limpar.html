@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Confirmar Limpeza{% endblock %}
+{% block content %}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Confirmar Limpeza
+                    </h4>
+                </div>
+                <div class="card-body text-center">
+                    <i class="bi bi-trash" style="font-size: 4rem; color: #dc3545;"></i>
+                    <h5 class="mt-3">Você tem certeza?</h5>
+                    <p class="text-muted">
+                        Esta ação vai <strong>deletar todas as {{ total }} assistências</strong> registradas.<br>
+                        Esta operação <strong class="text-danger">não pode ser desfeita</strong>.
+                    </p>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-lightbulb"></i> 
+                        <strong>Dica:</strong> Exporte o CSV antes de limpar para manter um backup.
+                    </div>
+                    
+                    <form method="POST" class="mt-4">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-lg me-2">
+                            <i class="bi bi-trash"></i> Sim, Deletar Tudo
+                        </button>
+                        <a href="{% url 'assistencia_list' %}" class="btn btn-secondary btn-lg">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

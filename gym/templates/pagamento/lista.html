@@ -80,11 +80,22 @@
             </table>
         </div>
         
-        <div class="mt-3">
-            <a href="{% url 'pagamento_csv' %}" class="btn btn-secondary">
-                <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
-            </a>
+        <!-- BOTOES DE EXPORTAR E LIMPAR -->
+        {% if pagamentos %}
+        <div class="mt-4 d-flex justify-content-between align-items-center">
+            <div class="text-muted">
+                <i class="bi bi-info-circle"></i> Total: <strong>{{ pagamentos|length }}</strong> pagamento(s)
+            </div>
+            <div>
+                <a href="{% url 'pagamento_csv' %}" class="btn btn-success btn-sm me-2">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
+                </a>
+                <a href="{% url 'pagamento_limpar' %}" class="btn btn-danger btn-sm">
+                    <i class="bi bi-trash"></i> Limpar Pagamentos
+                </a>
+            </div>
         </div>
+        {% endif %}
     </div>
 </div>
 
