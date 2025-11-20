@@ -1,54 +1,57 @@
 {% extends 'base.html' %}
+{% block title %}Pagamentos{% endblock %}
+
 {% block content %}
-
-<div class="card shadow">
-    <div class="card-header d-flex justify-content-between align-items-center bg-success text-white">
-        <h2 class="mb-0">
-            <i class="bi bi-cash-stack"></i> Pagamentos
-        </h2>
-        <a href="{% url 'criar_pagamento' %}" class="btn btn-light btn-sm fw-bold">
-            <i class="bi bi-plus-circle"></i> Novo Pagamento
-        </a>
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-cash-coin"></i> Pagamentos
+        </h1>
+        <p class="text-secondary mb-0">Gerenciar pagamentos e renovações</p>
     </div>
+    <a href="{% url 'criar_pagamento' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Novo Pagamento
+    </a>
+</div>
 
+<div class="card mb-4">
     <div class="card-body">
-        <!-- Barra de Busca -->
-        <form method="GET" class="mb-4">
-            <div class="input-group">
+        <form method="GET" class="row g-3">
+            <div class="col-md-10">
                 <input type="text" 
                        name="search" 
                        class="form-control" 
                        placeholder="Buscar por nome ou identidade do cliente..." 
-                       value="{{ search }}"
-                       autofocus>
-                <button class="btn btn-primary" type="submit">
+                       value="{{ search }}">
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" type="submit">
                     <i class="bi bi-search"></i> Buscar
                 </button>
-                {% if search %}
-                <a href="{% url 'pagamento_list' %}" class="btn btn-secondary">
-                    <i class="bi bi-x-circle"></i> Limpar
-                </a>
-                {% endif %}
             </div>
         </form>
-
         {% if search %}
-        <div class="alert alert-info">
-            <i class="bi bi-info-circle"></i> 
-            Mostrando resultados para: <strong>"{{ search }}"</strong>
-            ({{ pagamentos|length }} resultado{{ pagamentos|length|pluralize }})
+        <div class="mt-3">
+            <span class="badge bg-info me-2">{{ pagamentos|length }} resultado(s)</span>
+            <a href="{% url 'pagamento_list' %}" class="btn btn-sm btn-secondary">
+                <i class="bi bi-x-circle"></i> Limpar busca
+            </a>
         </div>
         {% endif %}
+    </div>
+</div>
 
+<div class="card">
+    <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
                         <th>Cliente</th>
                         <th>Identidade</th>
                         <th>Plano</th>
                         <th>Método</th>
-                        <th>Total</th>
+                        <th>Valor</th>
                         <th>Data</th>
                     </tr>
                 </thead>
@@ -56,21 +59,25 @@
                     {% for pagamento in pagamentos %}
                     <tr>
                         <td><strong>{{ pagamento.cliente.nome }}</strong></td>
-                        <td><span class="text-muted">{{ pagamento.cliente.identidade }}</span></td>
-                        <td><span class="badge bg-info">{{ pagamento.plano.nome }}</span></td>
+                        <td><span class="text-secondary">{{ pagamento.cliente.identidade }}</span></td>
+                        <td><span class="badge bg-primary">{{ pagamento.plano.nome }}</span></td>
                         <td>{{ pagamento.get_metodo_display }}</td>
-                        <td><strong class="text-success">R$ {{ pagamento.total }}</strong></td>
-                        <td>{{ pagamento.data|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <strong style="color: var(--success);">R$ {{ pagamento.total }}</strong>
+                        </td>
+                        <td>
+                            <small class="text-secondary">{{ pagamento.data|date:"d/m/Y H:i" }}</small>
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-5">
-                            <i class="bi bi-inbox" style="font-size:2rem;"></i>
-                            <p class="mt-2">
+                        <td colspan="6" class="text-center py-5">
+                            <i class="bi bi-inbox" style="font-size: 3rem; color: var(--text-secondary);"></i>
+                            <p class="text-secondary mt-3 mb-0">
                                 {% if search %}
-                                    Nenhum pagamento encontrado para "{{ search }}".
+                                Nenhum pagamento encontrado para "{{ search }}"
                                 {% else %}
-                                    Nenhum pagamento registrado.
+                                Nenhum pagamento registrado
                                 {% endif %}
                             </p>
                         </td>
@@ -79,24 +86,23 @@
                 </tbody>
             </table>
         </div>
-        
-        <!-- BOTOES DE EXPORTAR E LIMPAR -->
-        {% if pagamentos %}
-        <div class="mt-4 d-flex justify-content-between align-items-center">
-            <div class="text-muted">
-                <i class="bi bi-info-circle"></i> Total: <strong>{{ pagamentos|length }}</strong> pagamento(s)
-            </div>
-            <div>
-                <a href="{% url 'pagamento_csv' %}" class="btn btn-success btn-sm me-2">
-                    <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
-                </a>
-                <a href="{% url 'pagamento_limpar' %}" class="btn btn-danger btn-sm">
-                    <i class="bi bi-trash"></i> Limpar Pagamentos
-                </a>
-            </div>
-        </div>
-        {% endif %}
     </div>
-</div>
 
+    {% if pagamentos %}
+    <div class="card-footer d-flex justify-content-between align-items-center">
+        <div class="text-secondary">
+            <i class="bi bi-info-circle"></i> 
+            Total: <strong>{{ pagamentos|length }}</strong> pagamento(s)
+        </div>
+        <div>
+            <a href="{% url 'pagamento_csv' %}" class="btn btn-success btn-sm me-2">
+                <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
+            </a>
+            <a href="{% url 'pagamento_limpar' %}" class="btn btn-danger btn-sm">
+                <i class="bi bi-trash"></i> Limpar Tudo
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

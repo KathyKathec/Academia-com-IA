@@ -1,60 +1,121 @@
 {% extends 'base.html' %}
 {% load widget_tweaks %}
+{% block title %}{% if servico %}Editar{% else %}Novo{% endif %} Serviço{% endblock %}
+
 {% block content %}
-<h2>{% if servico %}Editar{% else %}Novo{% endif %} Serviço</h2>
-<form method="post">
-  {% csrf_token %}
-  <div class="mb-3">
-    {{ form.nome.label_tag }}
-    {{ form.nome|add_class:"form-control" }}
-  </div>
-  <div class="mb-3">
-    {{ form.descricao.label_tag }}
-    {{ form.descricao|add_class:"form-control" }}
-  </div>
-  <div class="mb-3">
-    {{ form.horario.label_tag }}
-    {{ form.horario|add_class:"form-control" }}
-    <small class="form-text text-muted">Formato HH:MM</small>
-  </div>
-  <div class="mb-3">
-    <label>Dias (segunda a sábado)</label>
-    {{ form.dias }}  <!-- checkbox list -->
-  </div>
-  <div class="mb-3">
-    <label>Planos (associar este serviço)</label>
-    <div class="border rounded p-2 bg-light">
-      {% for checkbox in form.planos %}
-        <div class="form-check">
-          {{ checkbox.tag }}
-          <label class="form-check-label">{{ checkbox.choice_label }}</label>
-        </div>
-      {% empty %}
-        <span class="text-muted">Nenhum plano disponível</span>
-      {% endfor %}
-    </div>
-  </div>
-
-  <button type="submit" class="btn btn-primary">Salvar</button>
-  <a href="{% url 'servico_list' %}" class="btn btn-secondary">Cancelar</a>
-</form>
-
-{% if servico %}
-<div class="mt-3">
-  <strong>Dias atuais:</strong>
-  {% for d in servico.dias.all %}
-    <span class="badge bg-secondary">{{ d.nome }}</span>
-  {% empty %}
-    <span class="text-muted">—</span>
-  {% endfor %}
-
-  <div class="mt-2"><strong>Planos associados:</strong>
-    {% for p in servico.planos.all %}
-      <span class="badge bg-info text-dark">{{ p.nome }}</span>
-    {% empty %}
-      <span class="text-muted">Sem planos</span>
-    {% endfor %}
-  </div>
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="bi bi-gear-fill"></i> 
+        {% if servico %}Editar{% else %}Novo{% endif %} Serviço
+    </h1>
 </div>
-{% endif %}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-tag"></i> Nome do Serviço *
+                        </label>
+                        {{ form.nome|add_class:"form-control" }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-card-text"></i> Descrição
+                        </label>
+                        {{ form.descricao|add_class:"form-control" }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-clock"></i> Horário
+                        </label>
+                        {{ form.horario|add_class:"form-control" }}
+                        <small class="text-secondary">Formato: HH:MM (ex: 08:00)</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-calendar-week"></i> Dias da Semana
+                        </label>
+                        <div class="border rounded p-3" style="background: var(--dark-hover);">
+                            {% for checkbox in form.dias %}
+                            <div class="form-check mb-2">
+                                {{ checkbox.tag }}
+                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                    {{ checkbox.choice_label }}
+                                </label>
+                            </div>
+                            {% empty %}
+                            <span class="text-secondary">Nenhum dia cadastrado</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="bi bi-card-checklist"></i> Planos Associados
+                        </label>
+                        <div class="border rounded p-3" style="background: var(--dark-hover);">
+                            {% for checkbox in form.planos %}
+                            <div class="form-check mb-2">
+                                {{ checkbox.tag }}
+                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">
+                                    {{ checkbox.choice_label }}
+                                </label>
+                            </div>
+                            {% empty %}
+                            <span class="text-secondary">Nenhum plano disponível</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-fill">
+                            <i class="bi bi-check-circle"></i> Salvar
+                        </button>
+                        <a href="{% url 'servico_list' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+
+                {% if servico %}
+                <div class="mt-4 pt-4 border-top">
+                    <div class="mb-3">
+                        <strong class="text-secondary">
+                            <i class="bi bi-calendar-check"></i> Dias Atuais:
+                        </strong>
+                        <div class="mt-2">
+                            {% for dia in servico.dias.all %}
+                            <span class="badge bg-secondary me-1">{{ dia.get_nome_display }}</span>
+                            {% empty %}
+                            <span class="text-secondary">Nenhum dia definido</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <strong class="text-secondary">
+                            <i class="bi bi-card-list"></i> Planos Associados:
+                        </strong>
+                        <div class="mt-2">
+                            {% for plano in servico.planos.all %}
+                            <span class="badge bg-primary me-1">{{ plano.nome }}</span>
+                            {% empty %}
+                            <span class="text-secondary">Nenhum plano associado</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

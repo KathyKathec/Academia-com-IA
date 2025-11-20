@@ -76,6 +76,7 @@ class Plano(models.Model):
 
 # -----------------------------
 # Cliente
+#-------------------------
 class Cliente(models.Model): 
     identidade = models.CharField(max_length=20, unique=True)
     nome = models.CharField(max_length=200)
@@ -95,6 +96,7 @@ class Cliente(models.Model):
 
 # -----------------------------
 # ClientePlano (relaciona Cliente com Plano)
+#--------------------------------------
 class ClientePlano(models.Model): 
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
     plano = models.ForeignKey(Plano, on_delete=models.CASCADE)
@@ -136,39 +138,47 @@ class Pagamento(models.Model):
         super().save(*args, **kwargs)
 
 
+
 # -----------------------------
-# Assistência (com IA no futuro)
+# Presença 
 # -----------------------------
-class Assistencia(models.Model):
+class Presenca(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
     usuario = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)  # admin ou funcionário
     data = models.DateField(auto_now_add=True)
     hora = models.TimeField(auto_now_add=True)
     tipo = models.CharField(max_length=20, choices=[("manual","Manual"),("facial","Facial com IA")])
     
+    class Meta:
+        verbose_name = "Presença"
+        verbose_name_plural = "Presenças"
+        ordering = ['-data', '-hora']
+    
     def __str__(self):
         return f"{self.cliente.nome} - {self.data} {self.tipo}"
-
-
-
+    
 # ========================
-# Nueva parte: Servicios y Días
+# Servicios y Días
 # ========================
 
 class DiaSemana(models.Model):
     DIAS = [
-        ("lunes", "Lunes"),
-        ("martes", "Martes"),
-        ("miercoles", "Miércoles"),
-        ("jueves", "Jueves"),
-        ("viernes", "Viernes"),
+        ("segunda", "Segunda-feira"),
+        ("terca", "Terça-feira"),
+        ("quarta", "Quarta-feira"),
+        ("quinta", "Quinta-feira"),
+        ("sexta", "Sexta-feira"),
         ("sabado", "Sábado"),
         ("domingo", "Domingo"),
     ]
     nome = models.CharField(max_length=20, choices=DIAS, unique=True)
 
+    class Meta:
+        verbose_name = "Dia da Semana"
+        verbose_name_plural = "Dias da Semana"
+
     def __str__(self):
-        return self.nome
+        return self.get_nome_display()  # ✅ Mostra o nome formatado
 
 
 class Servico(models.Model):

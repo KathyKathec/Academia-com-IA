@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}Presenças{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-check2-square"></i> Presenças
+        </h1>
+        <p class="text-secondary mb-0">Controle de presença dos clientes</p>
+    </div>
+    <div>
+        <a href="{% url 'reconhecimento_one' %}" class="btn btn-info me-2">
+            <i class="bi bi-camera-fill"></i> Reconhecimento Facial
+        </a>
+        <a href="{% url 'presenca_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nova Presença
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Tipo</th>
+                        <th>Data e Hora</th>
+                        <th>Registrado por</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for presenca in presencas %}
+                    <tr>
+                        <td><strong>{{ presenca.cliente.nome }}</strong></td>
+                        <td>
+                            {% if presenca.tipo == 'facial' %}
+                            <span class="badge bg-info">
+                                <i class="bi bi-camera-fill"></i> IA Facial
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-pencil-fill"></i> Manual
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-secondary">
+                                {{ presenca.data|date:"d/m/Y" }} às {{ presenca.hora|time:"H:i" }}
+                            </small>
+                        </td>
+                        <td>
+                            <small>{{ presenca.usuario.username|default:"Sistema" }}</small>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-5">
+                            <i class="bi bi-inbox" style="font-size: 3rem; color: var(--text-secondary);"></i>
+                            <p class="text-secondary mt-3 mb-0">Nenhuma presença registrada</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if presencas %}
+    <div class="card-footer d-flex justify-content-between align-items-center">
+        <div class="text-secondary">
+            <i class="bi bi-info-circle"></i> 
+            Total: <strong>{{ presencas|length }}</strong> presença(s)
+        </div>
+        <div>
+            <a href="{% url 'presenca_csv_export' %}" class="btn btn-success btn-sm me-2">
+                <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
+            </a>
+            <a href="{% url 'presenca_limpar' %}" class="btn btn-danger btn-sm">
+                <i class="bi bi-trash"></i> Limpar Tudo
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

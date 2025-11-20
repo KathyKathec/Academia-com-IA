@@ -1,33 +1,75 @@
 {% extends 'base.html' %}
+{% block title %}Serviços{% endblock %}
+
 {% block content %}
-<h2>Serviços</h2>
-<a href="{% url 'servico_create' %}" class="btn btn-success mb-3">Novo Serviço</a>
-<table class="table table-striped">
-  <thead>
-    <tr><th>Nome</th><th>Horário</th><th>Dias</th><th>Planos</th><th>Ações</th></tr>
-  </thead>
-  <tbody>
-    {% for s in servicos %}
-    <tr>
-      <td>{{ s.nome }}</td>
-      <td>{% if s.horario %}{{ s.horario|time:"H:i" }}{% else %}-{% endif %}</td>
-      <td>
-        {% for d in s.dias.all %}
-          <span class="badge bg-secondary">{{ d.nome }}</span>
-        {% empty %}
-          <span class="text-muted">—</span>
-        {% endfor %}
-      </td>
-      <td>
-        {% for p in s.planos.all %}
-          <span class="badge bg-info text-dark">{{ p.nome }}</span>
-        {% empty %}
-          <span class="text-muted">Sem planos</span>
-        {% endfor %}
-      </td>
-      <td><a href="{% url 'servico_edit' s.pk %}" class="btn btn-sm btn-warning">Editar</a></td>
-    </tr>
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-gear-fill"></i> Serviços
+        </h1>
+        <p class="text-secondary mb-0">Gerenciar serviços disponíveis</p>
+    </div>
+    <a href="{% url 'servico_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Novo Serviço
+    </a>
+</div>
+
+<div class="row g-4">
+    {% for servico in servicos %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h4 class="mb-2" style="color: aliceblue;">
+                            <i class="bi bi-gear-fill text-info"></i>
+                            {{ servico.nome }}
+                        </h4>
+                    </div>
+                </div>
+
+                {% if servico.descricao %}
+                <p class="text-secondary mb-3">{{ servico.descricao }}</p>
+                {% else %}
+                <p class="text-secondary mb-3"><em>Sem descrição</em></p>
+                {% endif %}
+
+                <div class="mb-3">
+                    <small class="text-secondary d-block mb-2">
+                        <i class="bi bi-card-checklist"></i> Usado em:
+                    </small>
+                    {% if servico.planos.all %}
+                    <div class="d-flex flex-wrap gap-1">
+                        {% for plano in servico.planos.all %}
+                        <span class="badge bg-primary">{{ plano.nome }}</span>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <span class="text-secondary">Nenhum plano</span>
+                    {% endif %}
+                </div>
+
+                <!-- ✅ BOTÕES COM DELETAR -->
+                <div class="d-flex gap-2 mt-3">
+                    <a href="{% url 'servico_edit' servico.pk %}" class="btn btn-warning btn-sm flex-fill">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <a href="{% url 'servico_delete' servico.pk %}" class="btn btn-danger btn-sm">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: var(--text-secondary);"></i>
+                <p class="text-secondary mt-3 mb-0">Nenhum serviço cadastrado</p>
+            </div>
+        </div>
+    </div>
     {% endfor %}
-  </tbody>
-</table>
+</div>
 {% endblock %}

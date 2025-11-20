@@ -1,37 +1,104 @@
+<!-- gym/templates/home.html -->
 {% extends 'base.html' %}
-
-{% block title %}Página Inicial{% endblock %}
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="text-center mt-5">
-    <h1 class="display-4">Bem-vindo à Academia!</h1>
-    <p class="lead">Gerencie clientes, planos e pagamentos de forma fácil.</p>
-    <div class="row justify-content-center mt-4">
-        <div class="col-md-3">
-            <a href="{% url 'lista_clientes' %}" class="btn btn-primary btn-lg w-100 mb-3">
-                <i class="bi bi-people"></i> Clientes
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a href="{% url 'plano_list' %}" class="btn btn-success btn-lg w-100 mb-3">
-                <i class="bi bi-card-list"></i> Planos
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a href="{% url 'pagamento_list' %}" class="btn btn-warning btn-lg w-100 mb-3">
-                <i class="bi bi-cash-stack"></i> Pagamentos
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a href="{% url 'assistencia_list' %}" class="btn btn-info btn-lg w-100 mb-3">
-                <i class="bi bi-life-preserver"></i> Assistencia
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a href="{% url 'servico_list' %}" class="btn btn-secondary btn-lg w-100 mb-3">
-                <i class="bi bi-tools"></i> Serviços
-            </a>
-        </div>
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="bi bi-speedometer2"></i> Dashboard
+    </h1>
+    <p class="text-secondary mb-0">Bem-vindo ao sistema de gerenciamento da academia</p>
+</div>
+
+<div class="row g-4">
+    <!-- Card Clientes -->
+    <div class="col-md-6 col-lg-4">
+        <a href="{% url 'lista_clientes' %}" class="text-decoration-none">
+            <div class="card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-people-fill" style="font-size: 3rem; color: var(--primary);"></i>
+                    </div>
+                    <h3 class="card-title mb-2" style="color: aliceblue;">Clientes</h3>
+                    <p class="text-secondary mb-0">Gerenciar cadastros e planos</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card Planos -->
+    <div class="col-md-6 col-lg-4">
+        <a href="{% url 'plano_list' %}" class="text-decoration-none">
+            <div class="card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-card-checklist" style="font-size: 3rem; color: var(--success);"></i>
+                    </div>
+                    <h3 class="card-title mb-2" style="color: aliceblue;">Planos</h3>
+                    <p class="text-secondary mb-0">Criar e editar planos</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card Pagamentos -->
+    <div class="col-md-6 col-lg-4">
+        <a href="{% url 'pagamento_list' %}" class="text-decoration-none">
+            <div class="card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-cash-coin" style="font-size: 3rem; color: var(--warning);"></i>
+                    </div>
+                    <h3 class="card-title mb-2" style="color: aliceblue;">Pagamentos</h3>
+                    <p class="text-secondary mb-0">Registrar e consultar</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card Serviços -->
+    <div class="col-md-6 col-lg-4">
+        <a href="{% url 'servico_list' %}" class="text-decoration-none">
+            <div class="card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-gear-fill" style="font-size: 3rem; color: var(--info);"></i>
+                    </div>
+                    <h3 class="card-title mb-2" style="color: aliceblue;">Serviços</h3>
+                    <p class="text-secondary mb-0">Gerenciar serviços</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card Reconhecimento -->
+    <div class="col-md-6 col-lg-4">
+        <a href="{% url 'reconhecimento_one' %}" class="text-decoration-none">
+            <div class="card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-camera-fill" style="font-size: 3rem; color: var(--danger);"></i>
+                    </div>
+                    <h3 class="card-title mb-2" style="color: aliceblue;">Reconhecimento IA</h3>
+                    <p class="text-secondary mb-0">Identificação facial</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Card Presenças -->
+    <div class="col-md-6 col-lg-4">
+        <a href="{% url 'presenca_list' %}" class="text-decoration-none">
+            <div class="card h-100">
+                <div class="card-body text-center p-4">
+                    <div class="mb-3">
+                        <i class="bi bi-check2-square" style="font-size: 3rem; color: var(--secondary);"></i>
+                    </div>
+                    <h3 class="card-title mb-2" style="color: aliceblue;">Presenças</h3>
+                    <p class="text-secondary mb-0">Controle de presença</p>
+                </div>
+            </div>
+        </a>
     </div>
 </div>
 {% endblock %}

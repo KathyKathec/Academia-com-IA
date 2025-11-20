@@ -1,26 +1,389 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Academia{% endblock %}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    {% block extra_head %}{% endblock %}
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #06b6d4;
+            --dark: #0f172a;
+            --dark-card: #1e293b;
+            --dark-hover: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            background-attachment: fixed;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 280px;
+            background: var(--dark-card);
+            padding: 2rem 0;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 0 1.5rem 2rem;
+            border-bottom: 1px solid var(--dark-hover);
+        }
+
+        .sidebar-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 1rem 0;
+        }
+
+        .sidebar-item {
+            margin: 0.25rem 0;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.875rem 1.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-link:hover,
+        .sidebar-link.active {
+            color: var(--text-primary);
+            background: var(--dark-hover);
+            border-left-color: var(--primary);
+        }
+
+        .sidebar-link i {
+            font-size: 1.25rem;
+            width: 24px;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            margin-left: 280px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        .page-header {
+            background: var(--dark-card);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+        }
+
+        /* CARDS */
+        .card {
+            background: var(--dark-card);
+            border: 1px solid var(--dark-hover);
+            border-radius: 1rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+            padding: 1.5rem;
+            border-radius: 1rem 1rem 0 0;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* TABLES */
+        .table {
+            color: var(--text-primary);
+        }
+
+        .table thead {
+            background: var(--dark-hover);
+        }
+
+        .table tbody tr {
+            border-bottom: 1px solid var(--dark-hover);
+            transition: background 0.3s ease;
+        }
+
+        .table tbody tr:hover {
+            background: var(--dark-hover);
+        }
+
+        /* FORMS */
+        .form-control,
+        .form-select {
+            background: var(--dark-hover);
+            border: 1px solid var(--dark-hover);
+            color: var(--text-primary);
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: var(--dark-hover);
+            border-color: var(--primary);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .form-label {
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-success {
+            background: var(--success);
+            border: none;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            border: none;
+        }
+
+        .btn-info {
+            background: var(--info);
+            border: none;
+        }
+
+        /* BADGES */
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+        }
+
+        /* ALERTS */
+        .alert {
+            border-radius: 0.75rem;
+            border: none;
+            background: var(--dark-hover);
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border-left: 4px solid var(--success);
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border-left: 4px solid var(--danger);
+        }
+
+        .alert-info {
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--info);
+            border-left: 4px solid var(--info);
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--dark-hover);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'home' %}">Academia</a>
-            <div>
-                <a class="nav-link d-inline text-light" href="{% url 'lista_clientes' %}">Clientes</a>
-                <a class="nav-link d-inline text-light" href="{% url 'plano_list' %}">Planos</a>
-                <a class="nav-link d-inline text-light" href="{% url 'pagamento_list' %}">Pagamentos</a>
-                <a class="nav-link d-inline text-light" href="{% url 'logout' %}">Sair</a>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="bi bi-trophy-fill"></i>
+                <span>Academia System</span>
+            </div>
+           
+            <div class="mt-3 text-center">
+                <small class="text-secondary">Logado como:</small>
+                <div class="text-primary fw-bold">{{ user.username }}</div>
             </div>
         </div>
-    </nav>
-    <div class="container">
+
+        <ul class="sidebar-menu">
+            <li class="sidebar-item">
+                <a href="{% url 'home' %}" class="sidebar-link {% if request.path == '/home' %}active{% endif %}">
+                    <i class="bi bi-house-door-fill"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'lista_clientes' %}" class="sidebar-link {% if 'clientes' in request.path %}active{% endif %}">
+                    <i class="bi bi-people-fill"></i>
+                    <span>Clientes</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'plano_list' %}" class="sidebar-link {% if 'planos' in request.path %}active{% endif %}">
+                    <i class="bi bi-card-checklist"></i>
+                    <span>Planos</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'pagamento_list' %}" class="sidebar-link {% if 'pagamentos' in request.path %}active{% endif %}">
+                    <i class="bi bi-cash-coin"></i>
+                    <span>Pagamentos</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'servico_list' %}" class="sidebar-link {% if 'servicos' in request.path %}active{% endif %}">
+                    <i class="bi bi-gear-fill"></i>
+                    <span>Serviços</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="{% url 'presenca_list' %}" class="sidebar-link {% if 'presencas' in request.path %}active{% endif %}">
+                    <i class="bi bi-check2-square"></i>
+                    <span>Presenças</span>
+                </a>
+            </li>
+            {% if user.is_staff %}
+            <li class="sidebar-item" style="margin-top: 2rem; border-top: 1px solid var(--dark-hover); padding-top: 1rem;">
+                <a href="{% url 'registro' %}" class="sidebar-link">
+                    <i class="bi bi-person-plus-fill"></i>
+                    <span>Criar Usuário</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="/admin/" target="_blank" class="sidebar-link">
+                    <i class="bi bi-shield-lock-fill"></i>
+                    <span>Painel Admin</span>
+                </a>
+            </li>
+            {% endif %}
+            <li class="sidebar-item" style="margin-top: 2rem; border-top: 1px solid var(--dark-hover); padding-top: 1rem;">
+                <a href="{% url 'logout' %}" class="sidebar-link">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Sair</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <!-- Messages -->
+        {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="bi bi-info-circle me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         {% block content %}{% endblock %}
-    </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

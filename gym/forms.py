@@ -95,21 +95,34 @@ class PagamentoForm(forms.ModelForm):
 # -----------------------------
 class ServicoForm(forms.ModelForm):
     dias = forms.ModelMultipleChoiceField(
-        queryset=DiaSemana.objects.exclude(nome__iexact='domingo').order_by('id'),
+        queryset=DiaSemana.objects.all(),
         widget=forms.CheckboxSelectMultiple,
-        required=False
+        required=False,
+        label="Dias da Semana"
     )
+    
     planos = forms.ModelMultipleChoiceField(
         queryset=Plano.objects.all(),
         widget=forms.CheckboxSelectMultiple,
-        required=False
+        required=False,
+        label="Planos"
     )
-
+    
     class Meta:
         model = Servico
         fields = ['nome', 'descricao', 'horario', 'dias', 'planos']
         widgets = {
-            'horario': forms.TimeInput(format='%H:%M', attrs={'placeholder': 'HH:MM', 'class': 'form-control'}),
             'nome': forms.TextInput(attrs={'class': 'form-control'}),
-            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows':3}),
+            'descricao': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'horario': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
         }
+        labels = {
+            'nome': 'Nome do Serviço',
+            'descricao': 'Descrição',
+            'horario': 'Horário',
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # ✅ Customiza como os dias aparecem no formulário
+        self.fields['dias'].label_from_instance = lambda obj: obj.get_nome_display()

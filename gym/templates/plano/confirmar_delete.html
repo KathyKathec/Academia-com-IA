@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Confirmar Exclusão{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Confirmar Exclusão
+                    </h4>
+                </div>
+                <div class="card-body text-center">
+                    <i class="bi bi-trash" style="font-size: 4rem; color: var(--danger);"></i>
+                    
+                    <h5 class="mt-3">Deletar plano "{{ plano.nome }}"?</h5>
+                    
+                    <div class="alert alert-info mt-3 text-start">
+                        <strong><i class="bi bi-info-circle"></i> Informações do plano:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li><strong>Tipo:</strong> {{ plano.tipo.get_nome_display }}</li>
+                            <li><strong>Valor:</strong> R$ {{ plano.preco }}</li>
+                            <li><strong>Duração:</strong> {{ plano.tipo.dias }} dias</li>
+                        </ul>
+                    </div>
+
+                    {% if clientes_com_plano > 0 %}
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Atenção!</strong><br>
+                        Este plano possui <strong>{{ clientes_com_plano }} cliente(s) ativo(s)</strong>.<br>
+                        Ao deletar, os clientes ficarão sem plano ativo.
+                    </div>
+                    {% endif %}
+
+                    <p class="text-muted mt-3">
+                        Esta operação <strong class="text-danger">não pode ser desfeita</strong>.
+                    </p>
+                    
+                    <form method="POST" class="mt-4">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger btn-lg me-2">
+                            <i class="bi bi-trash"></i> Sim, Deletar
+                        </button>
+                        <a href="{% url 'plano_list' %}" class="btn btn-secondary btn-lg">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -8,7 +8,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'academia.settings')
 import django
 django.setup()
 
-from gym.models import Cliente, Assistencia
+from gym.models import Cliente, Presenca
 
 trainer_path = os.path.join(os.path.dirname(__file__), 'trainer.yml')
 
@@ -69,12 +69,12 @@ while True:
                     texto = f"{nome} (aguarde {TIMEOUT_SECONDS - diff}s)"
                     cor = (255, 165, 0)  # Laranja
                 else:
-                    # Registra assistência
+                    # Registra presença
                     try:
                         cliente = Cliente.objects.get(id=client_id)
-                        Assistencia.objects.create(cliente=cliente)
+                        Presenca.objects.create(cliente=cliente, tipo='facial')
                         last_recognition[client_id] = now
-                        print(f"✅ Assistência registrada: {nome} ({confidence:.1f})")
+                        print(f"✅ Presença registrada: {nome} ({confidence:.1f})")
                         texto = f"{nome} - REGISTRADO!"
                         cor = (0, 255, 0)  # Verde
                     except Exception as e:
@@ -85,9 +85,9 @@ while True:
                 # Primeira vez
                 try:
                     cliente = Cliente.objects.get(id=client_id)
-                    Assistencia.objects.create(cliente=cliente)
+                    Presenca.objects.create(cliente=cliente, tipo='facial')
                     last_recognition[client_id] = now
-                    print(f"✅ Assistência registrada: {nome} ({confidence:.1f})")
+                    print(f"✅ Presença registrada: {nome} ({confidence:.1f})")
                     texto = f"{nome} - REGISTRADO!"
                     cor = (0, 255, 0)
                 except Exception as e:
