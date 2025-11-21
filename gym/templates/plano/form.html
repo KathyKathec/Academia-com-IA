@@ -1,98 +1,292 @@
 {% extends 'base.html' %}
 {% load widget_tweaks %}
-
-{% block title %}
-{% if form.instance.pk %}Editar Plano{% else %}Novo Plano{% endif %}
-{% endblock %}
+{% block title %}{% if plano %}Editar{% else %}Novo{% endif %} Plano{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2 class="mb-4 text-center">
-        {% if form.instance.pk %}Editar Plano{% else %}Novo Plano{% endif %}
-    </h2>
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-card-checklist"></i> 
+            {% if plano %}Editar Plano{% else %}Novo Plano{% endif %}
+        </h1>
+        <p class="text-secondary mb-0">Preencha as informações do plano</p>
+    </div>
+    <a href="{% url 'plano_list' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+</div>
 
-    <form method="post" novalidate>
-        {% csrf_token %}
-
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                <!-- Campo Tipo -->
-                <div class="mb-3">
-                    <label class="form-label fw-bold">{{ form.tipo.label }}</label>
-                    {{ form.tipo|add_class:"form-select" }}
-                    {% for error in form.tipo.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <form method="POST">
+            {% csrf_token %}
+            
+            <!-- Card - Informações Básicas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Informações Básicas
+                    </h5>
                 </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-tag-fill text-primary"></i> Nome do Plano *
+                            </label>
+                            <input type="text" 
+                                   name="nome" 
+                                   class="form-control form-control-lg" 
+                                   value="{% if plano %}{{ plano.nome }}{% endif %}"
+                                   placeholder="Ex: Plano Mensal"
+                                   required>
+                        </div>
 
-                <!-- Campo Nome -->
-                <div class="mb-3">
-                    <label class="form-label fw-bold">{{ form.nome.label }}</label>
-                    {{ form.nome|add_class:"form-control" }}
-                    {% for error in form.nome.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-cash text-success"></i> Valor (R$) *
+                            </label>
+                            <input type="number" 
+                                   name="preco" 
+                                   class="form-control form-control-lg" 
+                                   value="{% if plano %}{{ plano.preco }}{% endif %}"
+                                   placeholder="0.00"
+                                   step="0.01"
+                                   min="0"
+                                   required>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-calendar3 text-info"></i> Tipo de Plano *
+                            </label>
+                            <select name="tipo" class="form-select form-select-lg" required>
+                                <option value="">-- Selecione --</option>
+                                {% for tipo in tipos %}
+                                <option value="{{ tipo.id }}" 
+                                        {% if plano and plano.tipo.id == tipo.id %}selected{% endif %}>
+                                    {{ tipo.get_nome_display }} ({{ tipo.dias }} dias)
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-card-text text-secondary"></i> Descrição
+                        </label>
+                        <textarea name="descricao" 
+                                  class="form-control" 
+                                  rows="4" 
+                                  placeholder="Descreva os benefícios do plano...">{% if plano %}{{ plano.descricao }}{% endif %}</textarea>
+                    </div>
                 </div>
+            </div>
 
-                <!-- Campo Preço -->
-                <div class="mb-3">
-                    <label class="form-label fw-bold">{{ form.preco.label }}</label>
-                    {{ form.preco|add_class:"form-control" }}
-                    {% for error in form.preco.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
+            <!-- Card - Serviços Inclusos -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-gear-fill"></i> Serviços Inclusos
+                    </h5>
                 </div>
-
-                <!-- Campo Descrição -->
-                <div class="mb-3">
-                    <label class="form-label fw-bold">{{ form.descricao.label }}</label>
-                    {{ form.descricao|add_class:"form-control" }}
-                    {% for error in form.descricao.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
-                </div>
-
-                <!-- Campo Dias por Semana -->
-                <div class="mb-3">
-                    <label class="form-label fw-bold">{{ form.dias_por_semana.label }}</label>
-                    {{ form.dias_por_semana|add_class:"form-control" }}
-                    {% for error in form.dias_por_semana.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
-                </div>
-
-                <!-- Campo Status -->
-                <div class="form-check mb-4">
-                    {{ form.status|add_class:"form-check-input" }}
-                    <label class="form-check-label">{{ form.status.label }}</label>
-                    {% for error in form.status.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
-                </div>
-
-                <!-- Campo Serviços (Múltiplos) -->
-                <div class="mb-3">
-                    <label class="form-label fw-bold">{{ form.servicos.label }}</label>
-                    <div class="border rounded p-3 bg-light">
-                        {% for checkbox in form.servicos %}
-                            <div class="form-check">
-                                {{ checkbox.tag }}
-                                <label class="form-check-label">{{ checkbox.choice_label }}</label>
+                <div class="card-body p-4">
+                    {% if servicos %}
+                    <div class="row g-3">
+                        {% for servico in servicos %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="form-check-card">
+                                <input type="checkbox" 
+                                       class="form-check-input" 
+                                       name="servicos" 
+                                       value="{{ servico.id }}"
+                                       id="servico_{{ servico.id }}"
+                                       {% if plano and servico in plano.servicos.all %}checked{% endif %}>
+                                <label class="form-check-label-custom" for="servico_{{ servico.id }}">
+                                    <i class="bi bi-check-circle"></i>
+                                    <div>
+                                        <strong>{{ servico.nome }}</strong>
+                                        {% if servico.horario %}
+                                        <small class="text-secondary d-block">
+                                            <i class="bi bi-clock"></i> {{ servico.horario }}
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                </label>
                             </div>
+                        </div>
                         {% endfor %}
                     </div>
-                    {% for error in form.servicos.errors %}
-                        <div class="text-danger small">{{ error }}</div>
-                    {% endfor %}
+                    {% else %}
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Nenhum serviço cadastrado. 
+                        <a href="{% url 'servico_create' %}" class="alert-link">Cadastrar agora</a>
+                    </div>
+                    {% endif %}
                 </div>
+            </div>
 
-                <!-- Botão Salvar -->
-                <div class="text-center">
-                    <button type="submit" class="btn btn-primary px-4">Salvar</button>
-                    <a href="{% url 'plano_list' %}" class="btn btn-secondary px-4">Cancelar</a>
+            <!-- Botões de Ação -->
+            <div class="card">
+                <div class="card-body p-4">
+                    <div class="d-flex gap-3 justify-content-end">
+                        <a href="{% url 'plano_list' %}" class="btn btn-secondary btn-lg px-5">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success btn-lg px-5">
+                            <i class="bi bi-check-circle"></i> 
+                            {% if plano %}Atualizar{% else %}Criar{% endif %} Plano
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Card de Informações Atuais (apenas ao editar) -->
+        {% if plano %}
+        <div class="card mt-4 border-info">
+            <div class="card-header bg-info bg-opacity-10">
+                <h5 class="mb-0 text-info">
+                    <i class="bi bi-info-circle-fill"></i> Informações Atuais
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong class="text-secondary d-block mb-2">
+                            <i class="bi bi-calendar3"></i> Tipo:
+                        </strong>
+                        <span class="badge bg-primary fs-6 px-3 py-2">
+                            {{ plano.tipo.get_nome_display }} - {{ plano.tipo.dias }} dias
+                        </span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <strong class="text-secondary d-block mb-2">
+                            <i class="bi bi-cash"></i> Valor:
+                        </strong>
+                        <span class="badge bg-success fs-6 px-3 py-2">
+                            R$ {{ plano.preco }}
+                        </span>
+                    </div>
+
+                    <div class="col-12">
+                        <strong class="text-secondary d-block mb-2">
+                            <i class="bi bi-gear-fill"></i> Serviços Inclusos:
+                        </strong>
+                        {% if plano.servicos.all %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for servico in plano.servicos.all %}
+                            <span class="badge bg-secondary fs-6 px-3 py-2">
+                                {{ servico.nome }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <span class="text-muted">
+                            <i class="bi bi-dash-circle"></i> Nenhum serviço incluso
+                        </span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
-    </form>
+        {% endif %}
+    </div>
 </div>
+
+<style>
+/* Estilos customizados para checkboxes em cards */
+.form-check-card {
+    background: var(--dark-hover);
+    border: 2px solid var(--dark-hover);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    height: 100%;
+    display: flex;
+    align-items: flex-start;
+}
+
+.form-check-card:hover {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+    transform: translateY(-2px);
+}
+
+.form-check-card input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.75rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.form-check-card input[type="checkbox"]:checked ~ .form-check-label-custom {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.form-check-card input[type="checkbox"]:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.form-check-card:has(input:checked) {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.15);
+}
+
+.form-check-label-custom {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+    width: 100%;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.form-check-label-custom i {
+    font-size: 1.1rem;
+    opacity: 0.7;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+}
+
+.card-header {
+    background: rgba(99, 102, 241, 0.05);
+    border-bottom: 1px solid var(--dark-hover);
+}
+
+.card-header h5 {
+    color: var(--text-primary);
+}
+
+.form-control:focus, .form-control-lg:focus, .form-select:focus, .form-select-lg:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15);
+}
+
+.btn-lg {
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+}
+
+.alert-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
+}
+
+.alert-warning .alert-link {
+    color: #f59e0b;
+    font-weight: 600;
+    text-decoration: underline;
+}
+</style>
 {% endblock %}

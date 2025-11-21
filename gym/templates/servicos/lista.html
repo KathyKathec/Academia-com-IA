@@ -20,37 +20,65 @@
         <div class="card h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <h4 class="mb-2" style="color: aliceblue;">
+                    <div class="flex-grow-1">
+                        <h4 class="mb-2" style="color: var(--text-primary);">
                             <i class="bi bi-gear-fill text-info"></i>
                             {{ servico.nome }}
                         </h4>
+                        {% if servico.horario %}
+                        <div class="mb-2">
+                            <span class="badge bg-info">
+                                <i class="bi bi-clock"></i> {{ servico.horario }}
+                            </span>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
                 {% if servico.descricao %}
-                <p class="text-secondary mb-3">{{ servico.descricao }}</p>
+                <p class="text-secondary mb-3">{{ servico.descricao|truncatewords:15 }}</p>
                 {% else %}
                 <p class="text-secondary mb-3"><em>Sem descrição</em></p>
                 {% endif %}
 
+                <!-- ✅ DIAS DA SEMANA -->
                 <div class="mb-3">
                     <small class="text-secondary d-block mb-2">
-                        <i class="bi bi-card-checklist"></i> Usado em:
+                        <i class="bi bi-calendar-week"></i> Dias da semana:
+                    </small>
+                    {% if servico.dias.all %}
+                    <div class="d-flex flex-wrap gap-1">
+                        {% for dia in servico.dias.all %}
+                        <span class="badge bg-secondary" style="font-size: 0.75rem;">
+                            {{ dia.get_nome_display }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <span class="text-secondary"><em>Nenhum dia definido</em></span>
+                    {% endif %}
+                </div>
+
+                <!-- PLANOS QUE INCLUEM ESTE SERVIÇO -->
+                <div class="mb-3">
+                    <small class="text-secondary d-block mb-2">
+                        <i class="bi bi-card-checklist"></i> Incluído nos planos:
                     </small>
                     {% if servico.planos.all %}
                     <div class="d-flex flex-wrap gap-1">
                         {% for plano in servico.planos.all %}
-                        <span class="badge bg-primary">{{ plano.nome }}</span>
+                        <span class="badge bg-primary" style="font-size: 0.75rem;">
+                            {{ plano.nome }}
+                        </span>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <span class="text-secondary">Nenhum plano</span>
+                    <span class="text-secondary"><em>Nenhum plano associado</em></span>
                     {% endif %}
                 </div>
 
-                <!-- ✅ BOTÕES COM DELETAR -->
-                <div class="d-flex gap-2 mt-3">
+                <!-- BOTÕES DE AÇÃO -->
+                <div class="d-flex gap-2 mt-3 pt-3 border-top" style="border-color: var(--dark-hover) !important;">
                     <a href="{% url 'servico_edit' servico.pk %}" class="btn btn-warning btn-sm flex-fill">
                         <i class="bi bi-pencil"></i> Editar
                     </a>
@@ -66,10 +94,28 @@
         <div class="card">
             <div class="card-body text-center py-5">
                 <i class="bi bi-inbox" style="font-size: 3rem; color: var(--text-secondary);"></i>
-                <p class="text-secondary mt-3 mb-0">Nenhum serviço cadastrado</p>
+                <p class="text-secondary mt-3 mb-3">Nenhum serviço cadastrado</p>
+                <a href="{% url 'servico_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Cadastrar Primeiro Serviço
+                </a>
             </div>
         </div>
     </div>
     {% endfor %}
 </div>
+
+<style>
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.badge {
+    padding: 0.4rem 0.65rem;
+}
+</style>
 {% endblock %}

@@ -3,119 +3,288 @@
 {% block title %}{% if servico %}Editar{% else %}Novo{% endif %} Serviço{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title">
-        <i class="bi bi-gear-fill"></i> 
-        {% if servico %}Editar{% else %}Novo{% endif %} Serviço
-    </h1>
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-gear-fill"></i> 
+            {% if servico %}Editar Serviço{% else %}Novo Serviço{% endif %}
+        </h1>
+        <p class="text-secondary mb-0">Preencha as informações do serviço</p>
+    </div>
+    <a href="{% url 'servico_list' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
 </div>
 
 <div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-body p-4">
-                <form method="POST">
-                    {% csrf_token %}
-                    
-                    <div class="mb-3">
-                        <label class="form-label">
-                            <i class="bi bi-tag"></i> Nome do Serviço *
-                        </label>
-                        {{ form.nome|add_class:"form-control" }}
-                    </div>
+    <div class="col-lg-10">
+        <form method="POST">
+            {% csrf_token %}
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> Informações Básicas
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-tag-fill text-primary"></i> Nome do Serviço *
+                            </label>
+                            {{ form.nome|add_class:"form-control form-control-lg" }}
+                            {% if form.nome.errors %}
+                            <div class="text-danger mt-1">{{ form.nome.errors.0 }}</div>
+                            {% endif %}
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">
-                            <i class="bi bi-card-text"></i> Descrição
-                        </label>
-                        {{ form.descricao|add_class:"form-control" }}
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">
-                            <i class="bi bi-clock"></i> Horário
-                        </label>
-                        {{ form.horario|add_class:"form-control" }}
-                        <small class="text-secondary">Formato: HH:MM (ex: 08:00)</small>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">
-                            <i class="bi bi-calendar-week"></i> Dias da Semana
-                        </label>
-                        <div class="border rounded p-3" style="background: var(--dark-hover);">
-                            {% for checkbox in form.dias %}
-                            <div class="form-check mb-2">
-                                {{ checkbox.tag }}
-                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">
-                                    {{ checkbox.choice_label }}
-                                </label>
-                            </div>
-                            {% empty %}
-                            <span class="text-secondary">Nenhum dia cadastrado</span>
-                            {% endfor %}
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-clock-fill text-info"></i> Horário
+                            </label>
+                            {{ form.horario|add_class:"form-control form-control-lg"|attr:"placeholder:08:00" }}
+                            <small class="text-secondary">
+                                <i class="bi bi-lightbulb"></i> Formato: HH:MM
+                            </small>
+                            {% if form.horario.errors %}
+                            <div class="text-danger mt-1">{{ form.horario.errors.0 }}</div>
+                            {% endif %}
                         </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="form-label">
-                            <i class="bi bi-card-checklist"></i> Planos Associados
+                    <div class="mb-0">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-card-text text-secondary"></i> Descrição
                         </label>
-                        <div class="border rounded p-3" style="background: var(--dark-hover);">
-                            {% for checkbox in form.planos %}
-                            <div class="form-check mb-2">
-                                {{ checkbox.tag }}
-                                <label class="form-check-label" for="{{ checkbox.id_for_label }}">
-                                    {{ checkbox.choice_label }}
-                                </label>
-                            </div>
-                            {% empty %}
-                            <span class="text-secondary">Nenhum plano disponível</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary flex-fill">
-                            <i class="bi bi-check-circle"></i> Salvar
-                        </button>
-                        <a href="{% url 'servico_list' %}" class="btn btn-secondary">
-                            <i class="bi bi-x-circle"></i> Cancelar
-                        </a>
-                    </div>
-                </form>
-
-                {% if servico %}
-                <div class="mt-4 pt-4 border-top">
-                    <div class="mb-3">
-                        <strong class="text-secondary">
-                            <i class="bi bi-calendar-check"></i> Dias Atuais:
-                        </strong>
-                        <div class="mt-2">
-                            {% for dia in servico.dias.all %}
-                            <span class="badge bg-secondary me-1">{{ dia.get_nome_display }}</span>
-                            {% empty %}
-                            <span class="text-secondary">Nenhum dia definido</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-
-                    <div>
-                        <strong class="text-secondary">
-                            <i class="bi bi-card-list"></i> Planos Associados:
-                        </strong>
-                        <div class="mt-2">
-                            {% for plano in servico.planos.all %}
-                            <span class="badge bg-primary me-1">{{ plano.nome }}</span>
-                            {% empty %}
-                            <span class="text-secondary">Nenhum plano associado</span>
-                            {% endfor %}
-                        </div>
+                        {{ form.descricao|add_class:"form-control"|attr:"rows:4"|attr:"placeholder:Descreva o serviço..." }}
+                        {% if form.descricao.errors %}
+                        <div class="text-danger mt-1">{{ form.descricao.errors.0 }}</div>
+                        {% endif %}
                     </div>
                 </div>
-                {% endif %}
+            </div>
+
+            <!-- Card - Dias da Semana -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-week"></i> Dias da Semana
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if form.dias %}
+                    <div class="row g-3">
+                        {% for checkbox in form.dias %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="form-check-card">
+                                {{ checkbox.tag }}
+                                <label class="form-check-label-custom" for="{{ checkbox.id_for_label }}">
+                                    <i class="bi bi-calendar-check"></i>
+                                    <span>{{ checkbox.choice_label }}</span>
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Nenhum dia da semana cadastrado. 
+                        <a href="/admin/gym/diasemana/" target="_blank" class="alert-link">Cadastrar agora</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Card - Planos Associados -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-card-checklist"></i> Planos que incluem este serviço
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if form.planos %}
+                    <div class="row g-3">
+                        {% for checkbox in form.planos %}
+                        <div class="col-md-6">
+                            <div class="form-check-card">
+                                {{ checkbox.tag }}
+                                <label class="form-check-label-custom" for="{{ checkbox.id_for_label }}">
+                                    <i class="bi bi-box-seam"></i>
+                                    <span>{{ checkbox.choice_label }}</span>
+                                </label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Nenhum plano cadastrado. 
+                        <a href="{% url 'plano_create' %}" class="alert-link">Cadastrar agora</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="card">
+                <div class="card-body p-4">
+                    <div class="d-flex gap-3 justify-content-end">
+                        <a href="{% url 'servico_list' %}" class="btn btn-secondary btn-lg px-5">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success btn-lg px-5">
+                            <i class="bi bi-check-circle"></i> 
+                            {% if servico %}Atualizar{% else %}Criar{% endif %} Serviço
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Card de Informações Atuais (apenas ao editar) -->
+        {% if servico %}
+        <div class="card mt-4 border-info">
+            <div class="card-header bg-info bg-opacity-10">
+                <h5 class="mb-0 text-info">
+                    <i class="bi bi-info-circle-fill"></i> Informações Atuais
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong class="text-secondary d-block mb-2">
+                            <i class="bi bi-calendar-check"></i> Dias Cadastrados:
+                        </strong>
+                        {% if servico.dias.all %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for dia in servico.dias.all %}
+                            <span class="badge bg-secondary fs-6 px-3 py-2">
+                                {{ dia.get_nome_display }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <span class="text-muted">
+                            <i class="bi bi-dash-circle"></i> Nenhum dia definido
+                        </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <strong class="text-secondary d-block mb-2">
+                            <i class="bi bi-card-list"></i> Planos Associados:
+                        </strong>
+                        {% if servico.planos.all %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for plano in servico.planos.all %}
+                            <span class="badge bg-primary fs-6 px-3 py-2">
+                                {{ plano.nome }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <span class="text-muted">
+                            <i class="bi bi-dash-circle"></i> Nenhum plano associado
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
+        {% endif %}
     </div>
 </div>
+
+<style>
+/* Estilos customizados para checkboxes em cards */
+.form-check-card {
+    background: var(--dark-hover);
+    border: 2px solid var(--dark-hover);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    height: 100%;
+}
+
+.form-check-card:hover {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+    transform: translateY(-2px);
+}
+
+.form-check-card input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.75rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.form-check-card input[type="checkbox"]:checked ~ .form-check-label-custom {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.form-check-card input[type="checkbox"]:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.form-check-card:has(input:checked) {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.15);
+}
+
+.form-check-label-custom {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+    width: 100%;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.form-check-label-custom i {
+    font-size: 1.1rem;
+    opacity: 0.7;
+}
+
+.card-header {
+    background: rgba(99, 102, 241, 0.05);
+    border-bottom: 1px solid var(--dark-hover);
+}
+
+.card-header h5 {
+    color: var(--text-primary);
+}
+
+.form-control:focus, .form-control-lg:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15);
+}
+
+.btn-lg {
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+}
+
+.alert-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
+}
+
+.alert-warning .alert-link {
+    color: #f59e0b;
+    font-weight: 600;
+    text-decoration: underline;
+}
+</style>
 {% endblock %}

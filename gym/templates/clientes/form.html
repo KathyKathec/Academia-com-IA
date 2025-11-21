@@ -1,126 +1,205 @@
 {% extends 'base.html' %}
 {% load widget_tweaks %}
-
-{% block title %}{{ form.instance.pk|yesno:"Editar Cliente,Novo Cliente" }}{% endblock %}
+{% block title %}{% if cliente %}Editar{% else %}Novo{% endif %} Cliente{% endblock %}
 
 {% block content %}
-<nav class="mb-3">
-    <a href="{% url 'home' %}">Início</a> |
-    <a href="{% url 'lista_clientes' %}">Clientes</a> |
-    <a href="{% url 'plano_list' %}">Planos</a> |
-    <a href="{% url 'pagamento_list' %}">Pagamentos</a> |
-    <a href="{% url 'logout' %}">Sair</a>
-</nav>
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-person-fill"></i> 
+            {% if cliente %}Editar Cliente{% else %}Novo Cliente{% endif %}
+        </h1>
+        <p class="text-secondary mb-0">Preencha as informações do cliente</p>
+    </div>
+    <a href="{% url 'lista_clientes' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+</div>
 
-<div class="container mt-4">
-    <h2>{{ form.instance.pk|yesno:"Editar Cliente com Plano,Novo Cliente com Plano" }}</h2>
-
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-
-        <!-- ================= DADOS DO CLIENTE ================= -->
-        <div class="card mb-4 shadow-sm">
-            <div class="card-header bg-primary text-white">Dados do Cliente</div>
-            <div class="card-body">
-                {% for field in form.visible_fields %}
-                    {% if field.name != "status" %}
-                        <div class="mb-3">
-                            {{ field.label_tag }}
-                            {% if field.field.widget.input_type == "checkbox" %}
-                                {{ field|add_class:"form-check-input" }}
-                            {% else %}
-                                {{ field|add_class:"form-control" }}
-                            {% endif %}
-                            {% if field.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {% for error in field.errors %}{{ error }}<br>{% endfor %}
-                                </div>
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- Card - Dados Pessoais -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-badge"></i> Dados Pessoais
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-person-fill text-primary"></i> Nome Completo *
+                            </label>
+                            {{ form.nome|add_class:"form-control form-control-lg" }}
+                            {% if form.nome.errors %}
+                            <div class="text-danger mt-1">{{ form.nome.errors.0 }}</div>
                             {% endif %}
                         </div>
-                    {% endif %}
-                {% endfor %}
 
-                <!-- Checkbox de Status (apenas edição) -->
-                {% if form.instance.pk %}
-                    <div class="form-check mb-3">
-                        {{ form.status|add_class:"form-check-input" }}
-                        {{ form.status.label_tag }}
-                        {% if form.status.errors %}
-                            <div class="invalid-feedback d-block">
-                                {% for error in form.status.errors %}{{ error }}<br>{% endfor %}
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-card-heading text-info"></i> Identidade *
+                            </label>
+                            {{ form.identidade|add_class:"form-control form-control-lg" }}
+                            {% if form.identidade.errors %}
+                            <div class="text-danger mt-1">{{ form.identidade.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-telephone-fill text-success"></i> Telefone *
+                            </label>
+                            {{ form.telefone|add_class:"form-control form-control-lg"|attr:"placeholder:(00) 00000-0000" }}
+                            {% if form.telefone.errors %}
+                            <div class="text-danger mt-1">{{ form.telefone.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-envelope-fill text-warning"></i> Email
+                            </label>
+                            {{ form.email|add_class:"form-control form-control-lg"|attr:"placeholder:email@exemplo.com" }}
+                            {% if form.email.errors %}
+                            <div class="text-danger mt-1">{{ form.email.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-cake2 text-danger"></i> Idade
+                            </label>
+                            {{ form.idade|add_class:"form-control form-control-lg" }}
+                            {% if form.idade.errors %}
+                            <div class="text-danger mt-1">{{ form.idade.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-gender-ambiguous text-secondary"></i> Sexo
+                            </label>
+                            {{ form.sexo|add_class:"form-select form-select-lg" }}
+                            {% if form.sexo.errors %}
+                            <div class="text-danger mt-1">{{ form.sexo.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-toggle-on text-success"></i> Status
+                            </label>
+                            <div class="form-check form-switch" style="padding-top: 0.75rem;">
+                                {{ form.status|add_class:"form-check-input"|attr:"role:switch"|attr:"style:width: 3rem; height: 1.5rem; cursor: pointer;" }}
+                                <label class="form-check-label ms-2" for="{{ form.status.id_for_label }}">
+                                    <span class="badge bg-success">Ativo</span>
+                                </label>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-geo-alt-fill text-danger"></i> Endereço Completo
+                        </label>
+                        {{ form.endereco|add_class:"form-control"|attr:"rows:3"|attr:"placeholder:Rua, número, bairro, cidade, estado" }}
+                        {% if form.endereco.errors %}
+                        <div class="text-danger mt-1">{{ form.endereco.errors.0 }}</div>
                         {% endif %}
                     </div>
-                {% endif %}
+                </div>
             </div>
-        </div>
 
-        <!-- ================= PLANOS DO CLIENTE ================= -->
-        <div class="card mb-4 shadow-sm">
-            <div class="card-header bg-success text-white">Planos do Cliente</div>
-            <div class="card-body">
-                {{ formset.management_form }}
-
-                {% comment %} Renderizamos solo los planos existentes {% endcomment %}
-                {% for form_plano in formset %}
-                    {% if form_plano.instance.pk %}
-                        {% for field in form_plano.hidden_fields %}
-                            {{ field }}
-                        {% endfor %}
-                        <div class="border rounded p-3 mb-3 bg-light">
-                            {% for field in form_plano.visible_fields %}
-                                <div class="mb-3">
-                                    {{ field.label_tag }}
-                                    {% if field.field.widget.input_type == "checkbox" %}
-                                        {{ field|add_class:"form-check-input" }}
-                                    {% else %}
-                                        {{ field|add_class:"form-control" }}
-                                    {% endif %}
-                                    {% if field.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {% for error in field.errors %}{{ error }}<br>{% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            {% endfor %}
+            <!-- Card - Foto do Cliente -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-camera-fill"></i> Foto do Cliente
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        {% if cliente and cliente.imagem %}
+                        <div class="col-md-3 text-center mb-3 mb-md-0">
+                            <img src="{{ cliente.imagem.url }}" 
+                                 alt="{{ cliente.nome }}" 
+                                 class="img-thumbnail rounded"
+                                 style="max-width: 200px; max-height: 200px; object-fit: cover;">
+                            <small class="text-secondary d-block mt-2">Foto atual</small>
                         </div>
-                    {% endif %}
-                {% endfor %}
-
-                {% comment %} Formulario extra para novo plano {% endcomment %}
-                {% for form_plano in formset.extra_forms %}
-                    {% for field in form_plano.hidden_fields %}
-                        {{ field }}
-                    {% endfor %}
-                    <div class="border rounded p-3 mb-3 bg-light">
-                        <h5>Adicionar novo plano</h5>
-                        {% for field in form_plano.visible_fields %}
-                            <div class="mb-3">
-                                {{ field.label_tag }}
-                                {% if field.field.widget.input_type == "checkbox" %}
-                                    {{ field|add_class:"form-check-input" }}
-                                {% else %}
-                                    {{ field|add_class:"form-control" }}
-                                {% endif %}
-                                {% if field.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {% for error in field.errors %}{{ error }}<br>{% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
+                        {% endif %}
+                        <div class="{% if cliente and cliente.imagem %}col-md-9{% else %}col-12{% endif %}">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-image text-primary"></i> 
+                                {% if cliente and cliente.imagem %}Trocar Foto{% else %}Adicionar Foto{% endif %}
+                            </label>
+                            {{ form.imagem|add_class:"form-control form-control-lg" }}
+                            <small class="text-secondary d-block mt-2">
+                                <i class="bi bi-info-circle"></i> Formatos aceitos: JPG, PNG (máx. 5MB)
+                            </small>
+                            {% if form.imagem.errors %}
+                            <div class="text-danger mt-1">{{ form.imagem.errors.0 }}</div>
+                            {% endif %}
+                        </div>
                     </div>
-                {% endfor %}
-
-                {% if aviso_vencimento %}
-                    <div class="alert alert-warning">
-                        {{ aviso_vencimento }}
-                    </div>
-                {% endif %}
+                </div>
             </div>
-        </div>
 
-        <button type="submit" class="btn btn-primary">Salvar Cliente</button>
-    </form>
+            <!-- Botões de Ação -->
+            <div class="card">
+                <div class="card-body p-4">
+                    <div class="d-flex gap-3 justify-content-end">
+                        <a href="{% url 'lista_clientes' %}" class="btn btn-secondary btn-lg px-5">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success btn-lg px-5">
+                            <i class="bi bi-check-circle"></i> 
+                            {% if cliente %}Atualizar{% else %}Cadastrar{% endif %} Cliente
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
+
+<style>
+.card-header {
+    background: rgba(99, 102, 241, 0.05);
+    border-bottom: 1px solid var(--dark-hover);
+}
+
+.card-header h5 {
+    color: var(--text-primary);
+}
+
+.form-control:focus, .form-control-lg:focus, .form-select:focus, .form-select-lg:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15);
+}
+
+.btn-lg {
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+}
+
+.form-check-input:checked {
+    background-color: var(--success);
+    border-color: var(--success);
+}
+
+.img-thumbnail {
+    background: var(--dark-hover);
+    border: 2px solid var(--dark-hover);
+}
+</style>
 {% endblock %}

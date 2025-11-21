@@ -1,47 +1,190 @@
 {% extends 'base.html' %}
+{% load widget_tweaks %}
 {% block title %}Registrar Presença{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title">
-        <i class="bi bi-plus-circle"></i> Registrar Presença
-    </h1>
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-check2-square"></i> Registrar Presença
+        </h1>
+        <p class="text-secondary mb-0">Registre manualmente a presença de um cliente</p>
+    </div>
+    <a href="{% url 'presenca_list' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
 </div>
 
-<div class="card">
-    <div class="card-body">
+<div class="row justify-content-center">
+    <div class="col-lg-8">
         <form method="POST">
             {% csrf_token %}
             
-            <div class="mb-3">
-                <label class="form-label">Cliente</label>
-                <select name="cliente" class="form-control" required>
-                    <option value="">-- Selecione um cliente --</option>
-                    {% for cliente in clientes %}
-                    <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
-                    {% endfor %}
-                </select>
+            <!-- Card - Seleção de Cliente -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-check"></i> Selecione o Cliente
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <label class="form-label fw-semibold">
+                        <i class="bi bi-person-fill text-primary"></i> Cliente *
+                    </label>
+                    <select name="cliente" class="form-select form-select-lg" required>
+                        <option value="">-- Busque pelo nome do cliente --</option>
+                        {% for cliente in clientes %}
+                        <option value="{{ cliente.id }}">
+                            {{ cliente.nome }} - {{ cliente.identidade }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    
+                    {% if not clientes %}
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        Nenhum cliente ativo encontrado.
+                    </div>
+                    {% endif %}
+                </div>
             </div>
 
-            <div class="mb-3">
-                <label class="form-label">Tipo de Presença</label>
-                <select name="tipo" class="form-control">
-                    <option value="manual">Manual</option>
-                </select>
+            <!-- Card - Tipo de Registro -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-ui-checks"></i> Tipo de Registro
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-check-card">
+                                <input type="radio" 
+                                       class="form-check-input" 
+                                       name="tipo" 
+                                       value="manual"
+                                       id="tipo_manual"
+                                       checked>
+                                <label class="form-check-label-custom" for="tipo_manual">
+                                    <i class="bi bi-pencil-fill text-secondary"></i>
+                                    <strong>Registro Manual</strong>
+                                    <small class="text-secondary">Marcação por funcionário</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <a href="{% url 'reconhecimento_one' %}" class="text-decoration-none">
+                                <div class="form-check-card">
+                                    <div class="form-check-label-custom">
+                                        <i class="bi bi-camera-fill text-info"></i>
+                                        <strong>Reconhecimento Facial</strong>
+                                        <small class="text-secondary">Registro automático via IA</small>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="bi bi-lightbulb"></i>
+                        <strong>Dica:</strong> Use o reconhecimento facial para registro mais rápido e preciso.
+                    </div>
+                </div>
             </div>
 
-            <button type="submit" class="btn btn-success">
-                <i class="bi bi-check-circle"></i> Salvar Presença Manual
-            </button>
-
-            <a href="{% url 'reconhecimento_one' %}" class="btn btn-primary">
-                <i class="bi bi-camera-fill"></i> Registrar (IA Automática)
-            </a>
-
-            <a href="{% url 'presenca_list' %}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Voltar à Lista
-            </a>
+            <!-- Botões de Ação -->
+            <div class="card">
+                <div class="card-body p-4">
+                    <div class="d-flex gap-3 justify-content-end">
+                        <a href="{% url 'presenca_list' %}" class="btn btn-secondary btn-lg px-5">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success btn-lg px-5">
+                            <i class="bi bi-check-circle"></i> Registrar Presença
+                        </button>
+                    </div>
+                </div>
+            </div>
         </form>
     </div>
 </div>
+
+<style>
+.form-check-card {
+    background: var(--dark-hover);
+    border: 2px solid var(--dark-hover);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    height: 100%;
+    text-align: center;
+}
+
+.form-check-card:hover {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+    transform: translateY(-2px);
+}
+
+.form-check-card input[type="radio"] {
+    display: none;
+}
+
+.form-check-card:has(input:checked) {
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.15);
+}
+
+.form-check-card:has(input:checked) .form-check-label-custom {
+    color: var(--success);
+}
+
+.form-check-label-custom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.form-check-label-custom i {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.card-header {
+    background: rgba(99, 102, 241, 0.05);
+    border-bottom: 1px solid var(--dark-hover);
+}
+
+.card-header h5 {
+    color: var(--text-primary);
+}
+
+.form-select:focus, .form-select-lg:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15);
+}
+
+.btn-lg {
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+}
+
+.alert-info {
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: var(--primary);
+}
+
+.alert-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
+}
+</style>
 {% endblock %}
