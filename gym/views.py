@@ -2,7 +2,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import csv
 import subprocess
 import sys
@@ -105,53 +105,72 @@ from datetime import date, timedelta
 
 @login_required
 def lista_clientes(request):
-    clientes = Cliente.objects.all()
-    clientes_info = []
+    """Lista todos os clientes com busca"""
+    query = request.GET.get('q', '')  #  Captura termo de busca
     
-    for cliente in clientes:
-        # DEBUG: imprime no console
-        plano_ativo = cliente.clienteplano_set.filter(ativo=True).first()
-        print(f"Cliente: {cliente.nome}")
-        print(f"Plano ativo: {plano_ativo}")
-        if plano_ativo:
-            print(f"  - Plano: {plano_ativo.plano.nome}")
-            print(f"  - Data fim: {plano_ativo.data_fim}")
-            print(f"  - Ativo: {plano_ativo.ativo}")
-        print("---")
+    clientes_list = Cliente.objects.all()
+    
+    #  Aplica filtro de busca se houver termo
+    if query:
+        clientes_list = clientes_list.filter(
+            Q(nome__icontains=query) |
+            Q(identidade__icontains=query) |
+            Q(telefone__icontains=query) |
+            Q(email__icontains=query)
+        )
+    
+    clientes_list = clientes_list.order_by('-id')
+    
+    clientes_data = []
+    hoje = date.today()
+    
+    for cliente in clientes_list:
+        plano_ativo = ClientePlano.objects.filter(
+            cliente=cliente, 
+            ativo=True
+        ).first()
         
-        if plano_ativo and plano_ativo.data_fim:
-            # USA data_fim diretamente (já foi calculada no pagamento)
-            data_vencimento = plano_ativo.data_fim
-            dias_restantes = (data_vencimento - date.today()).days
-
-            if dias_restantes < 0:
-                status_class = "text-danger"
-                status_vencimento = f"Vencido há {abs(dias_restantes)} dias"
-            elif dias_restantes <= 7:
-                status_class = "text-warning"
-                status_vencimento = f"Vence em {dias_restantes} dias"
-            else:
-                status_class = "text-success"
-                status_vencimento = f"Vence em {dias_restantes} dias"
-        else:
-            status_class = "text-secondary"
-            status_vencimento = "Sem plano ativo"
+        if plano_ativo:
+            dias_restantes = (plano_ativo.data_fim - hoje).days
             
-        clientes_info.append({
+            if dias_restantes < 0:
+                status_vencimento = f'Vencido há {abs(dias_restantes)} dias'
+                status_class = 'text-danger'
+            elif dias_restantes == 0:
+                status_vencimento = 'Vence hoje'
+                status_class = 'text-warning'
+            elif dias_restantes <= 7:
+                status_vencimento = f'Vence em {dias_restantes} dias'
+                status_class = 'text-warning'
+            else:
+                status_vencimento = plano_ativo.data_fim.strftime('%d/%m/%Y')
+                status_class = 'text-success'
+            
+            plano_nome = plano_ativo.plano.nome
+        else:
+            status_vencimento = 'Sem plano'
+            status_class = 'text-secondary'
+            plano_nome = '-'
+        
+        clientes_data.append({
             'pk': cliente.pk,
             'nome': cliente.nome,
-            'imagem': cliente.imagem,
             'identidade': cliente.identidade,
-            'plano': plano_ativo.plano.nome if plano_ativo else "-",
+            'telefone': cliente.telefone,
+            'email': cliente.email,
+            'imagem': cliente.imagem,
+            'plano': plano_nome,
             'status_vencimento': status_vencimento,
-            'status_class': status_class
+            'status_class': status_class,
         })
     
-    return render(request, 'clientes/lista.html', {
-        'clientes': clientes_info,
-        'today': date.today()
-    })
-
+    context = {
+        'clientes': clientes_data,
+        'query': query,  #  Passa o termo de busca para o template
+        'total': len(clientes_data),  #  Total de resultados
+    }
+    
+    return render(request, 'clientes/lista.html', context)
 # delete cliente
 def deletar_cliente(request, pk):
     cliente = get_object_or_404(Cliente, pk=pk)
@@ -231,102 +250,143 @@ def plano_delete(request, pk):
 
 @login_required
 def criar_pagamento(request):
+    """Cria um novo pagamento"""
     if request.method == 'POST':
-        form = PagamentoForm(request.POST)
-        if form.is_valid():
-            pagamento = form.save(commit=False)
-            pagamento.usuario = request.user
-            pagamento.save()  # O total é calculado automaticamente no save() do modelo
+        cliente_id = request.POST.get('cliente')
+        plano_id = request.POST.get('plano')
+        metodo = request.POST.get('metodo')
+        
+        try:
+            cliente = Cliente.objects.get(pk=cliente_id)
+            plano = Plano.objects.get(pk=plano_id)
             
-            cliente = pagamento.cliente
-            plano = pagamento.plano
-            duracao_dias = plano.tipo.dias
-            
-            # Data do pagamento
-            data_pagamento = pagamento.data.date() if hasattr(pagamento.data, 'date') else pagamento.data
-            
-            # Desativa planos anteriores DIFERENTES
-            planos_antigos = ClientePlano.objects.filter(
+            # Cria o pagamento
+            pagamento = Pagamento.objects.create(
                 cliente=cliente,
-                ativo=True
-            ).exclude(plano=plano)
+                plano=plano,
+                metodo=metodo,
+                total=plano.preco,
+                usuario=request.user
+            )
             
-            if planos_antigos.exists():
-                for plano_antigo in planos_antigos:
-                    plano_antigo.ativo = False
-                    plano_antigo.data_fim = data_pagamento  # Encerra na data do novo pagamento
-                    plano_antigo.status_vencimento = 'cancelado'
-                    plano_antigo.save()
-                    print(f"❌ Plano desativado: {plano_antigo.plano.nome} (Cliente: {cliente.nome})")
-            
-            # Busca ou cria ClientePlano para o plano atual
+            # Cria ou atualiza o ClientePlano
             cliente_plano, created = ClientePlano.objects.get_or_create(
                 cliente=cliente,
                 plano=plano,
                 defaults={
-                    'data_inicio': data_pagamento,
-                    'data_fim': data_pagamento + timedelta(days=duracao_dias),
-                    'ativo': True,
-                    'status_vencimento': 'em dia'
+                    'data_inicio': date.today(),
+                    'data_fim': date.today() + timedelta(days=plano.tipo.dias),
+                    'ativo': True
                 }
             )
             
             if not created:
-                # Se já existe este plano, renova/estende
-                if cliente_plano.data_fim and cliente_plano.data_fim >= data_pagamento and cliente_plano.ativo:
-                    # Ainda não venceu: estende
-                    cliente_plano.data_fim = cliente_plano.data_fim + timedelta(days=duracao_dias)
-                else:
-                    # Já venceu ou estava inativo: renova
-                    cliente_plano.data_inicio = data_pagamento
-                    cliente_plano.data_fim = data_pagamento + timedelta(days=duracao_dias)
-                    cliente_plano.ativo = True
-                    cliente_plano.status_vencimento = 'em dia'
+                # Atualiza plano existente
+                cliente_plano.data_inicio = date.today()
+                cliente_plano.data_fim = date.today() + timedelta(days=plano.tipo.dias)
+                cliente_plano.ativo = True
                 cliente_plano.save()
             
-            nova_data = cliente_plano.data_fim
-            messages.success(request, f'✅ Pagamento registrado! Plano: {plano.nome} | Vencimento: {nova_data.strftime("%d/%m/%Y")}')
-            
-            # ✅ Informa se houve troca de plano
-            if planos_antigos.exists():
-                planos_desc = ", ".join([p.plano.nome for p in planos_antigos])
-                messages.info(request, f'ℹ️ Plano(s) anterior(es) desativado(s): {planos_desc}')
-            
+            messages.success(request, f'✅ Pagamento registrado com sucesso! Plano válido até {cliente_plano.data_fim.strftime("%d/%m/%Y")}')
             return redirect('pagamento_list')
-    else:
-        form = PagamentoForm()
+            
+        except Exception as e:
+            messages.error(request, f'❌ Erro ao processar pagamento: {str(e)}')
     
-    # ✅ MANTÉM AS LISTAS para o template
-    planos = Plano.objects.all()
-    clientes = Cliente.objects.all()
+    # ✅ DEFINE OS MÉTODOS DE PAGAMENTO
+    metodos = [
+        {
+            'value': 'dinheiro',
+            'label': 'Dinheiro',
+            'icon': 'cash-stack',
+            'color': 'success'
+        },
+        {
+            'value': 'cartao',
+            'label': 'Cartão',
+            'icon': 'credit-card',
+            'color': 'primary'
+        },
+        {
+            'value': 'pix',
+            'label': 'PIX',
+            'icon': 'qr-code',
+            'color': 'info'
+        }
+    ]
     
-    return render(request, 'pagamento/form.html', {
-        'form': form,
+    clientes = Cliente.objects.filter(status=True).order_by('nome')
+    planos = Plano.objects.all().order_by('nome')
+    
+    context = {
+        'clientes': clientes,
         'planos': planos,
-        'clientes': clientes
-    })
-
-
+        'metodos': metodos,  # ✅ Passa os métodos para o template
+    }
+    
+    return render(request, 'pagamento/form.html', context)
 # Listar pagamentos
 def pagamento_list(request):
-    # Pega o termo de busca
+    """Lista todos os pagamentos com filtros"""
     search = request.GET.get('search', '')
+    metodo = request.GET.get('metodo', '')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
     
     pagamentos = Pagamento.objects.select_related('cliente', 'plano', 'usuario').all()
     
-    # Aplica filtro se houver busca
+    # Filtro de busca por nome/identidade
     if search:
         pagamentos = pagamentos.filter(
-            models.Q(cliente__nome__icontains=search) | 
-            models.Q(cliente__identidade__icontains=search)
+            Q(cliente__nome__icontains=search) |
+            Q(cliente__identidade__icontains=search)
         )
+    
+    # Filtro por método de pagamento
+    if metodo:
+        pagamentos = pagamentos.filter(metodo=metodo)
+    
+    # Filtro por data início
+    if data_inicio:
+        try:
+            data_inicio_obj = datetime.strptime(data_inicio, '%Y-%m-%d').date()
+            pagamentos = pagamentos.filter(data__gte=data_inicio_obj)
+        except ValueError:
+            messages.warning(request, '⚠️ Data de início inválida')
+    
+    # Filtro por data fim
+    if data_fim:
+        try:
+            data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d').date()
+            pagamentos = pagamentos.filter(data__lte=data_fim_obj)
+        except ValueError:
+            messages.warning(request, '⚠️ Data de fim inválida')
     
     pagamentos = pagamentos.order_by('-data')
     
-    return render(request, 'pagamento/lista.html', {
+    # Calcula estatísticas
+    total_valor = sum(p.total for p in pagamentos)
+    total_pagamentos = pagamentos.count()
+    
+    # Atalhos de datas
+    hoje = date.today()
+    semana_inicio = hoje - timedelta(days=hoje.weekday())
+    mes_inicio = hoje.replace(day=1)
+    
+    context = {
         'pagamentos': pagamentos,
-        'search': search
-    })
+        'search': search,
+        'metodo': metodo,
+        'data_inicio': data_inicio,
+        'data_fim': data_fim,
+        'total_valor': total_valor,
+        'total_pagamentos': total_pagamentos,
+        'hoje': hoje.strftime('%Y-%m-%d'),
+        'semana_inicio': semana_inicio.strftime('%Y-%m-%d'),
+        'mes_inicio': mes_inicio.strftime('%Y-%m-%d'),
+    }
+    
+    return render(request, 'pagamento/lista.html', context)
 
 
 # Exportar pagamentos para CSV
@@ -501,8 +561,71 @@ def treinar_modelo(request):
 #presenca 
 @login_required
 def presenca_list(request):
-    presencas = Presenca.objects.select_related('cliente', 'usuario').order_by('-data', '-hora')
-    return render(request, 'presencas/lista.html', {'presencas': presencas})
+    """Lista todas as presenças com filtros"""
+    # ✅ Captura parâmetros de filtro
+    cliente_id = request.GET.get('cliente', '')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+    tipo = request.GET.get('tipo', '')
+    
+    # Busca todas as presenças
+    presencas = Presenca.objects.all().select_related('cliente', 'usuario')
+    
+    #  Aplica filtro de cliente
+    if cliente_id:
+        presencas = presencas.filter(cliente_id=cliente_id)
+    
+    #  Aplica filtro de data início
+    if data_inicio:
+        try:
+            data_inicio_obj = datetime.strptime(data_inicio, '%Y-%m-%d').date()
+            presencas = presencas.filter(data__gte=data_inicio_obj)
+        except ValueError:
+            messages.warning(request, '⚠️ Data de início inválida')
+    
+    #  Aplica filtro de data fim
+    if data_fim:
+        try:
+            data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d').date()
+            presencas = presencas.filter(data__lte=data_fim_obj)
+        except ValueError:
+            messages.warning(request, '⚠️ Data de fim inválida')
+    
+    #  Aplica filtro de tipo
+    if tipo:
+        presencas = presencas.filter(tipo=tipo)
+    
+    presencas = presencas.order_by('-data', '-hora')
+    
+    #  Busca todos os clientes para o select
+    clientes = Cliente.objects.filter(status=True).order_by('nome')
+    
+    #  Calcula estatísticas
+    total_presencas = presencas.count()
+    presencas_facial = presencas.filter(tipo='facial').count()
+    presencas_manual = presencas.filter(tipo='manual').count()
+    
+    #  Calcula datas para atalhos
+    hoje = date.today()
+    semana_inicio = hoje - timedelta(days=hoje.weekday())
+    mes_inicio = hoje.replace(day=1)
+    
+    context = {
+        'presencas': presencas,
+        'clientes': clientes,
+        'cliente_id': cliente_id,
+        'data_inicio': data_inicio,
+        'data_fim': data_fim,
+        'tipo': tipo,
+        'total_presencas': total_presencas,
+        'presencas_facial': presencas_facial,
+        'presencas_manual': presencas_manual,
+        'hoje': hoje.strftime('%Y-%m-%d'),
+        'semana_inicio': semana_inicio.strftime('%Y-%m-%d'),
+        'mes_inicio': mes_inicio.strftime('%Y-%m-%d'),
+    }
+    
+    return render(request, 'presencas/lista.html', context)
 
 @login_required
 def presenca_create(request):
@@ -526,11 +649,49 @@ def presenca_create(request):
 
 @login_required
 def presenca_csv_export(request):
-    """Exporta presenças para CSV"""
-    presencas = Presenca.objects.select_related('cliente', 'usuario').order_by('-data', '-hora')
+    """Exporta presenças para CSV COM FILTROS"""
+    #  Captura os mesmos filtros da listagem
+    cliente_id = request.GET.get('cliente', '')
+    data_inicio = request.GET.get('data_inicio', '')
+    data_fim = request.GET.get('data_fim', '')
+    tipo = request.GET.get('tipo', '')
+    
+    #  Aplica os mesmos filtros
+    presencas = Presenca.objects.select_related('cliente', 'usuario').all()
+    
+    if cliente_id:
+        presencas = presencas.filter(cliente_id=cliente_id)
+    
+    if data_inicio:
+        try:
+            data_inicio_obj = datetime.strptime(data_inicio, '%Y-%m-%d').date()
+            presencas = presencas.filter(data__gte=data_inicio_obj)
+        except ValueError:
+            pass
+    
+    if data_fim:
+        try:
+            data_fim_obj = datetime.strptime(data_fim, '%Y-%m-%d').date()
+            presencas = presencas.filter(data__lte=data_fim_obj)
+        except ValueError:
+            pass
+    
+    if tipo:
+        presencas = presencas.filter(tipo=tipo)
+    
+    presencas = presencas.order_by('-data', '-hora')
+    
+    # Nome do arquivo com filtros
+    nome_arquivo = f'presencas_{date.today().strftime("%Y%m%d")}'
+    if cliente_id:
+        cliente = Cliente.objects.get(pk=cliente_id)
+        nome_arquivo += f'_{cliente.nome.replace(" ", "_")}'
+    if data_inicio or data_fim:
+        nome_arquivo += '_periodo'
+    nome_arquivo += '.csv'
     
     response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
-    response['Content-Disposition'] = f'attachment; filename="presencas_{date.today().strftime("%Y%m%d")}.csv"'
+    response['Content-Disposition'] = f'attachment; filename="{nome_arquivo}"'
     
     writer = csv.writer(response, delimiter=';')
     

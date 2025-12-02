@@ -7,7 +7,14 @@
         <h1 class="page-title">
             <i class="bi bi-check2-square"></i> Presenças
         </h1>
-        <p class="text-secondary mb-0">Controle de presença dos clientes</p>
+        <p class="text-secondary mb-0">
+            Controle de presença dos clientes
+            {% if cliente_id or data_inicio or data_fim or tipo %}
+            <span class="badge bg-primary ms-2">
+                {{ total_presencas }} resultado{{ total_presencas|pluralize }}
+            </span>
+            {% endif %}
+        </p>
     </div>
     <div>
         <a href="{% url 'reconhecimento_one' %}" class="btn btn-info me-2">
@@ -19,6 +26,133 @@
     </div>
 </div>
 
+<!-- ✅ FILTROS DE BUSCA -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-funnel"></i> Filtros de Busca
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="{% url 'presenca_list' %}" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">
+                    <i class="bi bi-person-fill text-primary"></i> Cliente
+                </label>
+                <select name="cliente" class="form-select" id="cliente-select">
+                    <option value="">Todos os clientes</option>
+                    {% for cliente in clientes %}
+                    <option value="{{ cliente.id }}" {% if cliente_id == cliente.id|stringformat:"s" %}selected{% endif %}>
+                        {{ cliente.nome }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">
+                    <i class="bi bi-calendar-check text-success"></i> Data Início
+                </label>
+                <input type="date" 
+                       name="data_inicio" 
+                       class="form-control" 
+                       value="{{ data_inicio }}">
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">
+                    <i class="bi bi-calendar-x text-danger"></i> Data Fim
+                </label>
+                <input type="date" 
+                       name="data_fim" 
+                       class="form-control" 
+                       value="{{ data_fim }}">
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label fw-semibold">
+                    <i class="bi bi-ui-checks text-info"></i> Tipo
+                </label>
+                <select name="tipo" class="form-select">
+                    <option value="">Todos os tipos</option>
+                    <option value="facial" {% if tipo == 'facial' %}selected{% endif %}>
+                        IA Facial
+                    </option>
+                    <option value="manual" {% if tipo == 'manual' %}selected{% endif %}>
+                        Manual
+                    </option>
+                </select>
+            </div>
+
+            <div class="col-md-2 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary flex-fill">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+                {% if cliente_id or data_inicio or data_fim or tipo %}
+                <a href="{% url 'presenca_list' %}" class="btn btn-secondary" title="Limpar filtros">
+                    <i class="bi bi-x-circle"></i>
+                </a>
+                {% endif %}
+            </div>
+        </form>
+
+        <!-- ✅ ATALHOS DE PERÍODO -->
+        <div class="mt-3 pt-3 border-top" style="border-color: var(--dark-hover) !important;">
+            <small class="text-secondary d-block mb-2">
+                <i class="bi bi-lightning-fill"></i> Atalhos rápidos:
+            </small>
+            <div class="btn-group" role="group">
+                <a href="{% url 'presenca_list' %}?data_inicio={{ hoje }}&data_fim={{ hoje }}" 
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-calendar-day"></i> Hoje
+                </a>
+                <a href="{% url 'presenca_list' %}?data_inicio={{ semana_inicio }}&data_fim={{ hoje }}" 
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-calendar-week"></i> Esta Semana
+                </a>
+                <a href="{% url 'presenca_list' %}?data_inicio={{ mes_inicio }}&data_fim={{ hoje }}" 
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-calendar-month"></i> Este Mês
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ ESTATÍSTICAS -->
+{% if total_presencas > 0 %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary bg-opacity-10 border-primary">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-check2-square" style="font-size: 2.5rem; color: var(--primary);"></i>
+                <h3 class="mt-2 mb-0" style="color: var(--text-primary);">{{ total_presencas }}</h3>
+                <small class="text-secondary">Total de Presenças</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info bg-opacity-10 border-info">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-camera-fill" style="font-size: 2.5rem; color: var(--info);"></i>
+                <h3 class="mt-2 mb-0" style="color: var(--text-primary);">{{ presencas_facial }}</h3>
+                <small class="text-secondary">Reconhecimento Facial</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-secondary bg-opacity-10 border-secondary">
+            <div class="card-body text-center py-4">
+                <i class="bi bi-pencil-fill" style="font-size: 2.5rem; color: var(--text-secondary);"></i>
+                <h3 class="mt-2 mb-0" style="color: var(--text-primary);">{{ presencas_manual }}</h3>
+                <small class="text-secondary">Registro Manual</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- TABELA DE PRESENÇAS -->
 <div class="card">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -34,7 +168,11 @@
                 <tbody>
                     {% for presenca in presencas %}
                     <tr>
-                        <td><strong>{{ presenca.cliente.nome }}</strong></td>
+                        <td>
+                            <strong>{{ presenca.cliente.nome }}</strong>
+                            <br>
+                            <small class="text-secondary">{{ presenca.cliente.identidade }}</small>
+                        </td>
                         <td>
                             {% if presenca.tipo == 'facial' %}
                             <span class="badge bg-info">
@@ -47,8 +185,12 @@
                             {% endif %}
                         </td>
                         <td>
+                            <i class="bi bi-calendar"></i>
+                            {{ presenca.data|date:"d/m/Y" }}
+                            <br>
                             <small class="text-secondary">
-                                {{ presenca.data|date:"d/m/Y" }} às {{ presenca.hora|time:"H:i" }}
+                                <i class="bi bi-clock"></i>
+                                {{ presenca.hora|time:"H:i" }}
                             </small>
                         </td>
                         <td>
@@ -58,8 +200,24 @@
                     {% empty %}
                     <tr>
                         <td colspan="4" class="text-center py-5">
-                            <i class="bi bi-inbox" style="font-size: 3rem; color: var(--text-secondary);"></i>
-                            <p class="text-secondary mt-3 mb-0">Nenhuma presença registrada</p>
+                            <i class="bi bi-{% if cliente_id or data_inicio or data_fim or tipo %}search{% else %}inbox{% endif %}" 
+                               style="font-size: 3rem; color: var(--text-secondary);"></i>
+                            <p class="text-secondary mt-3 mb-3">
+                                {% if cliente_id or data_inicio or data_fim or tipo %}
+                                    Nenhuma presença encontrada com os filtros aplicados
+                                {% else %}
+                                    Nenhuma presença registrada
+                                {% endif %}
+                            </p>
+                            {% if cliente_id or data_inicio or data_fim or tipo %}
+                            <a href="{% url 'presenca_list' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Ver todas as presenças
+                            </a>
+                            {% else %}
+                            <a href="{% url 'presenca_create' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Registrar Primeira Presença
+                            </a>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -69,20 +227,168 @@
     </div>
 
     {% if presencas %}
-    <div class="card-footer d-flex justify-content-between align-items-center">
+    <div class="card-footer d-flex justify-content-between align-items-center" style="background: var(--dark-card); border-top: 1px solid var(--dark-hover);">
         <div class="text-secondary">
             <i class="bi bi-info-circle"></i> 
-            Total: <strong>{{ presencas|length }}</strong> presença(s)
+            Exibindo <strong style="color: var(--text-primary);">{{ presencas|length }}</strong> presença(s)
         </div>
         <div>
-            <a href="{% url 'presenca_csv_export' %}" class="btn btn-success btn-sm me-2">
+            <a href="{% url 'presenca_csv_export' %}?cliente={{ cliente_id }}&data_inicio={{ data_inicio }}&data_fim={{ data_fim }}&tipo={{ tipo }}" 
+               class="btn btn-success btn-sm me-2">
                 <i class="bi bi-file-earmark-spreadsheet"></i> Exportar CSV
             </a>
-            <a href="{% url 'presenca_limpar' %}" class="btn btn-danger btn-sm">
+            <a href="{% url 'presenca_limpar' %}" 
+               class="btn btn-danger btn-sm"
+               onclick="return confirm('⚠️ Tem certeza que deseja limpar TODAS as presenças?\n\nEsta ação não pode ser desfeita!')">
                 <i class="bi bi-trash"></i> Limpar Tudo
             </a>
         </div>
     </div>
     {% endif %}
 </div>
+
+<style>
+.card-header {
+    background: rgba(99, 102, 241, 0.05);
+    border-bottom: 1px solid var(--dark-hover);
+}
+
+.card-header h5 {
+    color: var(--text-primary) !important;
+}
+
+.form-label {
+    color: var(--text-primary);
+}
+
+.form-control, .form-select {
+    background: var(--dark-hover);
+    color: var(--text-primary);
+    border: 1px solid var(--dark-hover);
+}
+
+.form-control:focus, .form-select:focus {
+    background: var(--dark-hover);
+    color: var(--text-primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15);
+}
+
+.table {
+    color: #000000; /* ✅ Texto principal preto */
+}
+
+.table thead {
+    background: #ffffff !important;
+}
+
+.table th {
+    font-weight: 600;
+    color: #000000 !important;
+    border-bottom: 2px solid var(--dark-hover);
+}
+
+.table th i {
+    color: #000000 !important;
+}
+
+.table td {
+    vertical-align: middle;
+    border-bottom: 1px solid var(--dark-hover);
+    color: #000000 !important; /* ✅ Células pretas */
+    background: #ffffff; /* ✅ Fundo branco */
+}
+
+.table td strong {
+    color: #000000 !important; /* ✅ Nome do cliente preto */
+}
+
+/* ✅ Texto secundário mais escuro */
+.table td small.text-secondary {
+    color: #4a5568 !important; /* ✅ Cinza escuro para identidade */
+    opacity: 1;
+}
+
+.table td .text-secondary {
+    color: #4a5568 !important; /* ✅ Cinza escuro para hora */
+    opacity: 1;
+}
+
+/* ✅ Ícones dentro das células */
+.table td i.bi-calendar,
+.table td i.bi-clock {
+    color: #6b7280 !important; /* ✅ Ícones cinza escuro */
+}
+
+.table tbody tr {
+    background: #ffffff; /* ✅ Fundo branco */
+}
+
+.table tbody tr:hover {
+    background: #f3f4f6 !important; /* ✅ Hover cinza claro */
+}
+
+.badge {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.65rem;
+    color: #fff;
+}
+
+.btn-outline-primary {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: transparent;
+}
+
+.btn-outline-primary:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* Estatísticas */
+.card.bg-primary.bg-opacity-10 {
+    background: rgba(99, 102, 241, 0.1) !important;
+}
+
+.card.bg-info.bg-opacity-10 {
+    background: rgba(6, 182, 212, 0.1) !important;
+}
+
+.card.bg-secondary.bg-opacity-10 {
+    background: rgba(148, 163, 184, 0.1) !important;
+}
+
+.card.border-primary {
+    border-color: var(--primary) !important;
+}
+
+.card.border-info {
+    border-color: var(--info) !important;
+}
+
+.card.border-secondary {
+    border-color: var(--text-secondary) !important;
+}
+
+/* Melhora o contraste fora da tabela */
+small.text-secondary {
+    color: var(--text-secondary) !important;
+    opacity: 0.9;
+}
+
+.text-center i.bi-inbox,
+.text-center i.bi-search {
+    opacity: 0.5;
+}
+
+.btn-group .btn {
+    font-size: 0.875rem;
+}
+
+/* ✅ Texto quando não há dados */
+.table td .text-secondary:not(small) {
+    color: #6b7280 !important;
+}
+</style>
 {% endblock %}

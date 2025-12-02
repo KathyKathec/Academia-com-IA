@@ -8,13 +8,52 @@
         <h1 class="page-title">
             <i class="bi bi-people-fill"></i> Clientes
         </h1>
-        <p class="text-secondary mb-0">Gerenciar cadastros e planos dos clientes</p>
+        <p class="text-secondary mb-0">
+            Gerenciar cadastros e planos dos clientes
+            {% if query %}
+            <span class="badge bg-primary ms-2">
+                {{ total }} resultado{{ total|pluralize }}
+            </span>
+            {% endif %}
+        </p>
     </div>
     <a href="{% url 'criar_cliente' %}" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Novo Cliente
     </a>
 </div>
 
+<!--  BARRA DE BUSCA -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{% url 'lista_clientes' %}" class="row g-3 align-items-center">
+            <div class="col-md-10">
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text bg-dark-hover border-0">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" 
+                           name="q" 
+                           class="form-control border-0" 
+                           placeholder="Buscar por nome, identidade, telefone ou email..."
+                           value="{{ query }}"
+                           autofocus>
+                    {% if query %}
+                    <a href="{% url 'lista_clientes' %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Limpar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- TABELA DE CLIENTES -->
 <div class="card">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -43,6 +82,13 @@
                         </td>
                         <td>
                             <strong>{{ cliente.nome }}</strong>
+                            {% if query %}
+                            <br><small class="text-secondary">
+                                {% if cliente.telefone %}
+                                    <i class="bi bi-telephone"></i> {{ cliente.telefone }}
+                                {% endif %}
+                            </small>
+                            {% endif %}
                         </td>
                         <td>
                             <span class="text-secondary">{{ cliente.identidade }}</span>
@@ -77,8 +123,24 @@
                     {% empty %}
                     <tr>
                         <td colspan="6" class="text-center py-5">
-                            <i class="bi bi-inbox" style="font-size: 3rem; color: var(--text-secondary);"></i>
-                            <p class="text-secondary mt-3 mb-0">Nenhum cliente cadastrado</p>
+                            <i class="bi bi-{% if query %}search{% else %}inbox{% endif %}" 
+                               style="font-size: 3rem; color: var(--text-secondary);"></i>
+                            <p class="text-secondary mt-3 mb-3">
+                                {% if query %}
+                                    Nenhum resultado para "<strong>{{ query }}</strong>"
+                                {% else %}
+                                    Nenhum cliente cadastrado
+                                {% endif %}
+                            </p>
+                            {% if query %}
+                            <a href="{% url 'lista_clientes' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Ver todos os clientes
+                            </a>
+                            {% else %}
+                            <a href="{% url 'criar_cliente' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Cadastrar Primeiro Cliente
+                            </a>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -87,4 +149,72 @@
         </div>
     </div>
 </div>
+
+<style>
+/*  Estilos da busca */
+.input-group-text {
+    background: var(--dark-hover);
+    color: var(--text-secondary);
+    border: 1px solid var(--dark-hover);
+}
+
+.form-control {
+    background: var(--dark-hover);
+    color: var(--text-primary);
+    border: 1px solid var(--dark-hover);
+}
+
+.form-control:focus {
+    background: var(--dark-hover);
+    color: var(--text-primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15);
+}
+
+.form-control::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+.table {
+    color: var(--text-primary);
+}
+
+.table thead {
+    background: #ffffff !important;
+}
+
+.table th {
+    font-weight: 600;
+    color: #000000 !important;
+    border-bottom: 2px solid var(--dark-hover);
+}
+
+.table th i {
+    color: #000000 !important;
+}
+
+.table td {
+    vertical-align: middle;
+    border-bottom: 1px solid var(--dark-hover);
+    color: var(--text-primary);
+}
+
+.table td strong {
+    color: #000000 !important;
+}
+
+.table tbody tr:hover {
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.badge {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.65rem;
+}
+
+.btn-group .btn {
+    padding: 0.375rem 0.75rem;
+}
+</style>
 {% endblock %}
