@@ -9,12 +9,12 @@
             <h2>Confirmar Exclusão</h2>
         </div>
         <div class="card-body">
-            <p class="lead">Tem certeza que deseja excluir o cliente "{{ cliente.nome }}"?</p>
-            <p>Esta ação não pode ser desfeita.</p>
+            <p class="lead" style="color: aliceblue;">Tem certeza que deseja excluir o cliente "{{ cliente.nome }}"?</p>
+            <p style="color: aliceblue;">Esta ação não pode ser desfeita.</p>
             
             <form method="post">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+                <button type="submit" class="btn btn-danger" >Confirmar Exclusão</button>
                 <a href="{% url 'lista_clientes' %}" class="btn btn-secondary">Cancelar</a>
             </form>
         </div>

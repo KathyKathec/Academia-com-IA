@@ -34,10 +34,13 @@ urlpatterns = [
     path('presencas/csv/', views.presenca_csv_export, name='presenca_csv_export'),
     path('presencas/limpar/', views.presenca_limpar, name='presenca_limpar'),
 
-    path('coletar_imagens_cliente', views.coletar_imagens_cliente, name='coletar_imagens_cliente'),
-    path('reconhecimento_one', views.reconhecimento_once_view, name='reconhecimento_once_view'),
-    path('treinar_modelo', views.treinar_modelo, name='treinar_modelo'),
 
+    path('clientes/<int:pk>/coletar-imagens/', views.coletar_imagens_cliente, name='coletar_imagens_cliente'),
+    path('reconhecimento/', views.reconhecimento_once_view, name='reconhecimento_one'),
+    path('reconhecimento/treinar/', views.treinar_modelo, name='treinar_modelo'),
+    path('reconhecimento/deletar/<int:pk>/', views.deletar_reconhecimento, name='deletar_reconhecimento'),
+    path('cliente/deletar-completo/<int:pk>/', views.deletar_cliente_completo, name='deletar_cliente_completo'),
+ 
     path('', views.login_view, name='login'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
@@ -47,11 +50,3 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-urlpatterns += [
-    path('clientes/<int:pk>/coletar/', views.coletar_imagens_cliente, name='coletar_imagens_cliente'),
-    path('reconhecimento/treinar/', views.treinar_modelo, name='treinar_modelo'),
-    # chama reconhecimento para um cliente específico (POST)
-    path('reconhecimento/one/<int:pk>/', views.reconhecimento_once_view, name='reconhecimento_one_cliente'),
-    # opcional: rota sem target (não necessária se sempre for por cliente)
-    path('reconhecimento/one/', views.reconhecimento_once_view, name='reconhecimento_one'),
-  ]

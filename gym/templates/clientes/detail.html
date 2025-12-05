@@ -37,7 +37,15 @@
                     <i class="bi bi-card-heading"></i> {{ cliente.identidade }}
                 </p>
                 
-               
+                {% if cliente.status %}
+                <span class="badge bg-success">
+                    <i class="bi bi-check-circle"></i> Ativo
+                </span>
+                {% else %}
+                <span class="badge bg-danger">
+                    <i class="bi bi-x-circle"></i> Inativo
+                </span>
+                {% endif %}
             </div>
         </div>
 
@@ -166,6 +174,51 @@
             </div>
         </div>
 
+        <!-- Card - Reconhecimento Facial -->
+       <div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="bi bi-camera-video"></i> Reconhecimento Facial
+        </h5>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <!-- ✅ ADICIONE cliente.pk AQUI -->
+                <a href="{% url 'coletar_imagens_cliente' cliente.pk %}" class="btn btn-info w-100 btn-lg">
+                    <i class="bi bi-camera-fill"></i> Capturar Fotos
+                </a>
+                <small class="text-secondary d-block mt-2">
+                    <i class="bi bi-info-circle"></i> Captura 30 fotos do rosto
+                </small>
+            </div>
+                    
+                    <div class="col-md-6">
+                        <form method="POST" action="{% url 'treinar_modelo' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success w-100 btn-lg">
+                                <i class="bi bi-cpu"></i> Treinar Modelo
+                            </button>
+                        </form>
+                        <small class="text-secondary d-block mt-2">
+                            <i class="bi bi-info-circle"></i> Treina com todos os clientes
+                        </small>
+                    </div>
+                </div>
+                
+                <hr style="border-color: var(--dark-hover); margin: 1.5rem 0;">
+                
+                <div class="alert alert-info mb-0">
+                    <h6><i class="bi bi-lightbulb"></i> Instruções:</h6>
+                    <ol class="mb-0">
+                        <li><strong>Capturar Fotos:</strong> Posicione o rosto na câmera. O sistema capturará 30 fotos automaticamente.</li>
+                        <li><strong>Treinar Modelo:</strong> Após capturar fotos de TODOS os clientes, clique para treinar.</li>
+                        <li><strong>Reconhecimento:</strong> Vá em Presenças → Reconhecimento Facial.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
         <!-- Card - Ações Rápidas -->
         <div class="card mb-4">
             <div class="card-header">
@@ -188,31 +241,14 @@
                     </div>
 
                     <div class="col-md-6">
-                        <a href="#" class="btn btn-info w-100 btn-lg" onclick="alert('Funcionalidade em desenvolvimento'); return false;">
-                            <i class="bi bi-camera"></i> Coletar Imagens
-                        </a>
-                    </div>
-
-                    <div class="col-md-6">
-                        <form method="post" action="{% url 'treinar_modelo' %}">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-secondary w-100 btn-lg">
-                                <i class="bi bi-cpu"></i> Treinar IA
-                            </button>
-                        </form>
-                    </div>
-
-                    <div class="col-md-6">
                         <a href="{% url 'reconhecimento_one' %}" class="btn btn-primary w-100 btn-lg">
-                            <i class="bi bi-camera-fill"></i> Reconhecimento Facial
+                            <i class="bi bi-camera-video-fill"></i> Iniciar Reconhecimento
                         </a>
                     </div>
 
                     <div class="col-md-6">
-                        <a href="{% url 'deletar_cliente' cliente.pk %}" 
-                           class="btn btn-danger w-100 btn-lg"
-                           onclick="return confirm('Tem certeza que deseja deletar este cliente?')">
-                            <i class="bi bi-trash"></i> Deletar Cliente
+                        <a href="{% url 'deletar_reconhecimento' cliente.pk %}" class="btn btn-outline-warning w-100 btn-lg">
+                            <i class="bi bi-trash"></i> Deletar Dataset
                         </a>
                     </div>
                 </div>
@@ -220,7 +256,7 @@
         </div>
 
         <!-- Card - Histórico de Pagamentos -->
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-header">
                 <h5 class="mb-0">
                     <i class="bi bi-credit-card"></i> Histórico de Pagamentos
@@ -232,31 +268,33 @@
                     <table class="table table-hover mb-0">
                         <thead>
                             <tr>
-                                <th style="color: #000;"><i class="bi bi-box" ></i> Plano</th>
-                                <th style="color: #000;"><i class="bi bi-credit-card"></i> Método</th>
-                                <th style="color: #000;"><i class="bi bi-cash"></i> Valor</th>
-                                <th style="color: #000;"><i class="bi bi-calendar"></i> Data</th>
+                                <th>Plano</th>
+                                <th>Método</th>
+                                <th>Valor</th>
+                                <th>Data</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for pagamento in pagamentos %}
                             <tr>
-                                <td><strong style="color: #000;">{{ pagamento.plano.nome }}</strong></td>
+                                <td><strong>{{ pagamento.plano.nome }}</strong></td>
                                 <td>
-                                    <span class="badge bg-secondary">
-                                        {% if pagamento.metodo == 'dinheiro' %}
-                                            <i class="bi bi-cash"></i> Dinheiro
-                                        {% elif pagamento.metodo == 'cartao' %}
-                                            <i class="bi bi-credit-card"></i> Cartão
-                                        {% elif pagamento.metodo == 'pix' %}
-                                            <i class="bi bi-qr-code"></i> PIX
-                                        {% else %}
-                                            {{ pagamento.metodo }}
-                                        {% endif %}
+                                    {% if pagamento.metodo == 'dinheiro' %}
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-cash-stack"></i> Dinheiro
                                     </span>
+                                    {% elif pagamento.metodo == 'cartao' %}
+                                    <span class="badge bg-primary">
+                                        <i class="bi bi-credit-card"></i> Cartão
+                                    </span>
+                                    {% elif pagamento.metodo == 'pix' %}
+                                    <span class="badge bg-info">
+                                        <i class="bi bi-qr-code"></i> PIX
+                                    </span>
+                                    {% endif %}
                                 </td>
                                 <td><strong class="text-success">R$ {{ pagamento.total|floatformat:2 }}</strong></td>
-                                <td>{{ pagamento.data|date:"d/m/Y H:i" }}</td>
+                                <td><small class="text-secondary">{{ pagamento.data|date:"d/m/Y H:i" }}</small></td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -265,9 +303,28 @@
                 {% else %}
                 <div class="text-center py-5">
                     <i class="bi bi-inbox" style="font-size: 3rem; color: var(--text-secondary);"></i>
-                    <p class="text-secondary mt-3 mb-0" style="color: #000;">Nenhum pagamento registrado</p>
+                    <p class="text-secondary mt-3 mb-0">Nenhum pagamento registrado</p>
                 </div>
                 {% endif %}
+            </div>
+        </div>
+
+        <!-- Card - Ações Críticas -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex gap-2 justify-content-end">
+                    <a href="{% url 'editar_cliente' cliente.pk %}" class="btn btn-warning">
+                        <i class="bi bi-pencil-fill"></i> Editar
+                    </a>
+                    
+                    <a href="{% url 'deletar_reconhecimento' cliente.pk %}" class="btn btn-outline-warning">
+                        <i class="bi bi-camera-fill"></i> Deletar Dataset
+                    </a>
+                    
+                    <a href="{% url 'deletar_cliente_completo' cliente.pk %}" class="btn btn-danger">
+                        <i class="bi bi-trash-fill"></i> Deletar Tudo
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -275,6 +332,8 @@
 
 <style>
 .card {
+    background: var(--dark-card);
+    border: 1px solid var(--dark-hover);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -289,36 +348,39 @@
     font-size: 0.95rem;
 }
 
-/*  Corrige cores da tabela */
 .table {
     color: var(--text-primary);
 }
 
 .table thead {
-    background: #ffffff !important; /* 
+    background: #ffffff !important;
 }
 
 .table th {
     font-weight: 600;
-    color: #000000 !important; /* Texto preto */
+    color: #000000 !important;
     border-bottom: 2px solid var(--dark-hover);
-}
-
-.table th i {
-    color: #000000 !important; /* Ícones pretos */
 }
 
 .table td {
     vertical-align: middle;
     border-bottom: 1px solid var(--dark-hover);
     color: var(--text-primary);
+    background: #ffffff;
+}
+
+.table td strong {
+    color: #000000 !important;
+}
+
+.table tbody tr {
+    background: #ffffff;
 }
 
 .table tbody tr:hover {
-    background: rgba(99, 102, 241, 0.05);
+    background: #f3f4f6 !important;
 }
 
-/*  Corrige alertas */
 .alert {
     border-radius: 0.75rem;
     border: none;
@@ -330,27 +392,18 @@
     border-left: 4px solid #10b981;
 }
 
-.alert-success strong {
-    color: #10b981;
-}
-
 .alert-danger {
     background: rgba(239, 68, 68, 0.15);
     color: #ef4444 !important;
     border-left: 4px solid #ef4444;
 }
 
-.alert-danger strong {
-    color: #ef4444;
+.alert-info {
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: var(--text-primary);
 }
 
-.alert-warning {
-    background: rgba(245, 158, 11, 0.15);
-    color: #f59e0b !important;
-    border-left: 4px solid #f59e0b;
-}
-
-/*  Headers dos cards */
 .card-header {
     background: rgba(99, 102, 241, 0.05);
     border-bottom: 1px solid var(--dark-hover);
@@ -360,38 +413,29 @@
     color: var(--text-primary) !important;
 }
 
-/*  Textos em geral */
 .card-body strong {
     color: var(--text-primary);
 }
 
-.card-body h3, .card-body h4, .card-body h5 {
+.card-body h3, .card-body h4, .card-body h5, .card-body h6 {
     color: var(--text-primary);
 }
 
-/*  Badge com melhor contraste */
 .badge {
     color: #fff;
     font-weight: 600;
 }
 
-/*  Textos secundários mais visíveis */
 small.text-secondary {
     color: var(--text-secondary) !important;
     opacity: 0.9;
 }
 
-/*  Placeholder quando vazio */
 .text-center i.bi-inbox {
     color: var(--text-secondary) !important;
     opacity: 0.5;
 }
 
-.text-center .text-secondary {
-    color: var(--text-secondary) !important;
-}
-
-/*  Links e textos do card de header */
 .page-title {
     color: var(--text-primary) !important;
 }

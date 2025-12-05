@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block title %}Deletar Reconhecimento Facial{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                        Deletar Reconhecimento Facial
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        {% if cliente.imagem %}
+                        <img src="{{ cliente.imagem.url }}" 
+                             alt="{{ cliente.nome }}"
+                             style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid var(--warning);">
+                        {% else %}
+                        <i class="bi bi-person-circle" style="font-size: 8rem; color: var(--warning);"></i>
+                        {% endif %}
+                        <h3 class="mt-3" style="color: var(--text-primary);">{{ cliente.nome }}</h3>
+                        <p class="text-secondary">{{ cliente.identidade }}</p>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h5><i class="bi bi-info-circle"></i> O que será deletado:</h5>
+                        <ul class="mb-0">
+                            <li>🗑️ <strong>Todas as fotos do dataset</strong> (pasta dataset/{{ cliente.id }}/)</li>
+                            <li>🧠 <strong>Dados de treinamento LBPH</strong></li>
+                            {% if not tem_dataset %}
+                            <li class="text-danger">⚠️ <strong>Dataset não encontrado!</strong></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <h5><i class="bi bi-shield-check"></i> O que NÃO será deletado:</h5>
+                        <ul class="mb-0">
+                            <li>✅ Cadastro do cliente</li>
+                            <li>✅ Histórico de presenças</li>
+                            <li>✅ Histórico de pagamentos</li>
+                            <li>✅ Foto de perfil</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-danger">
+                        <h5><i class="bi bi-exclamation-triangle"></i> Importante:</h5>
+                        <p class="mb-2">
+                            Após deletar, você precisará:
+                        </p>
+                        <ol class="mb-0">
+                            <li>Capturar novas fotos (se quiser reabilitar reconhecimento)</li>
+                            <li>Executar o retreinamento: <code>python academia/reconhecimento/treina.py</code></li>
+                        </ol>
+                    </div>
+
+                    <form method="POST" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2 justify-content-center">
+                            <a href="{% url 'cliente_detail' cliente.pk %}" class="btn btn-secondary btn-lg">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="bi bi-trash"></i> Confirmar Deleção do Dataset
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    background: var(--dark-card);
+    border-color: var(--warning) !important;
+}
+
+.card-header {
+    background: var(--warning) !important;
+    color: #000000 !important;
+}
+
+.card-header h4 {
+    color: #000000 !important;
+}
+
+.alert {
+    background: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.3);
+    color: var(--text-primary);
+}
+
+.alert h5 {
+    color: var(--text-primary);
+}
+
+.alert-danger {
+    background: rgba(220, 53, 69, 0.1);
+    border-color: rgba(220, 53, 69, 0.3);
+}
+
+.alert-info {
+    background: rgba(13, 202, 240, 0.1);
+    border-color: rgba(13, 202, 240, 0.3);
+}
+
+code {
+    background: var(--dark-hover);
+    color: var(--primary);
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+}
+</style>
+{% endblock %}

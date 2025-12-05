@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}Deletar Cliente Completamente{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-octagon-fill"></i>
+                        DELETAR CLIENTE COMPLETAMENTE
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        {% if cliente.imagem %}
+                        <img src="{{ cliente.imagem.url }}" 
+                             alt="{{ cliente.nome }}"
+                             style="width: 150px; height: 150px; border-radius: 50%; object-fit: cover; border: 4px solid var(--danger);">
+                        {% else %}
+                        <i class="bi bi-person-x-fill" style="font-size: 8rem; color: var(--danger);"></i>
+                        {% endif %}
+                        <h3 class="mt-3" style="color: var(--text-primary);">{{ cliente.nome }}</h3>
+                        <p class="text-secondary">{{ cliente.identidade }}</p>
+                    </div>
+
+                    <div class="alert alert-danger">
+                        <h5><i class="bi bi-trash-fill"></i> TUDO será deletado permanentemente:</h5>
+                        <ul class="mb-0">
+                            <li>🗑️ Cadastro completo do cliente</li>
+                            <li>📸 Dataset ({{ tem_dataset|yesno:"Encontrado,Não encontrado" }})</li>
+                            <li>🖼️ Foto de perfil</li>
+                            <li>✅ {{ total_presencas }} registro(s) de presença</li>
+                            <li>💰 {{ total_pagamentos }} pagamento(s)</li>
+                            <li>📋 Vínculos com planos</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h5><i class="bi bi-exclamation-triangle-fill"></i> ATENÇÃO:</h5>
+                        <p class="mb-0">
+                            <strong>Esta ação NÃO pode ser desfeita!</strong><br>
+                            Todos os dados serão perdidos permanentemente.
+                        </p>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               id="confirmacao"
+                               onchange="document.getElementById('btnDeletar').disabled = !this.checked">
+                        <label class="form-check-label" for="confirmacao" style="color: var(--text-primary);">
+                            Eu entendo que esta ação é irreversível e quero deletar <strong>{{ cliente.nome }}</strong> permanentemente
+                        </label>
+                    </div>
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="d-flex gap-2 justify-content-center">
+                            <a href="{% url 'cliente_detail' cliente.pk %}" class="btn btn-secondary btn-lg">
+                                <i class="bi bi-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" 
+                                    id="btnDeletar"
+                                    class="btn btn-danger btn-lg" 
+                                    disabled>
+                                <i class="bi bi-trash-fill"></i> DELETAR PERMANENTEMENTE
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    background: var(--dark-card);
+    border-color: var(--danger) !important;
+}
+
+.card-header {
+    background: var(--danger) !important;
+}
+
+.alert {
+    background: rgba(220, 53, 69, 0.1);
+    border-color: rgba(220, 53, 69, 0.3);
+    color: var(--text-primary);
+}
+
+.alert h5 {
+    color: var(--text-primary);
+}
+
+.alert-warning {
+    background: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.3);
+}
+
+.form-check-input {
+    background: var(--dark-hover);
+    border-color: var(--danger);
+}
+
+.form-check-input:checked {
+    background-color: var(--danger);
+    border-color: var(--danger);
+}
+
+.form-check-label {
+    color: var(--text-primary);
+}
+</style>
+{% endblock %}

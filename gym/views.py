@@ -1,4 +1,5 @@
 # gym/views.py
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
@@ -18,6 +19,7 @@ from django.db import models
 from django.db.models import Q
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.models import User
+import shutil
 
 # Lock para evitar múltiplas chamadas simultâneas
 capture_lock = Lock()
@@ -30,70 +32,45 @@ def home(request):
 
 # Criar cliente com plano 
 def criar_cliente(request):
-    if request.method == "POST":
+    """Cria um novo cliente"""
+    if request.method == 'POST':
         form = ClienteForm(request.POST, request.FILES)
-        
         if form.is_valid():
-            # Salva cliente primeiro
-            cliente = form.save(commit=False)
-            cliente.status = True  # cliente ativo
-            cliente.save()
-
-            # inicializa o formset com a instância do cliente
-            formset = ClientePlanoFormSet(request.POST, instance=cliente)
-            if formset.is_valid():
-                # Salva os planos SEM calcular data_fim
-                planos = formset.save(commit=False)
-                for cliente_plano in planos:
-                    # Define data_inicio mas NÃO define data_fim
-                    # data_fim será definida quando fizer o primeiro pagamento
-                    if not cliente_plano.data_inicio:
-                        cliente_plano.data_inicio = date.today()
-                    cliente_plano.ativo = False  # Inativo até o primeiro pagamento
-                    cliente_plano.data_fim = None  # Sem vencimento até o pagamento
-                    cliente_plano.save()
-                
-                messages.warning(request, f"Cliente {cliente.nome} criado! Registre o primeiro pagamento para ativar o plano.")
-                return redirect('lista_clientes')
-            # se formset não for válido, ele vai mostrar os erros
-        else:
-            # se form não for válido, cria o formset vazio só pra não quebrar o template
-            formset = ClientePlanoFormSet(request.POST)
+            cliente = form.save()
+            messages.success(
+                request, 
+                f'✅ Cliente {cliente.nome} cadastrado com sucesso!\n\n'
+                f'📋 Próximos passos:\n'
+                f'1. Capturar fotos para reconhecimento facial\n'
+                f'2. Treinar o modelo\n'
+                f'3. Realizar pagamento e vincular plano'
+            )
+            return redirect('lista_clientes')  #  Redireciona para lista
     else:
         form = ClienteForm()
-        formset = ClientePlanoFormSet()
+    
+    return render(request, 'clientes/form.html', {'form': form})
 
-    return render(request, 'clientes/form.html', {
-        'form': form,
-        'formset': formset,
-    })
-
-
-# Editar cliente 
+@login_required
 def editar_cliente(request, pk):
-    cliente = Cliente.objects.get(pk=pk)
-    form = ClienteForm(request.POST or None, request.FILES or None, instance=cliente)
-    formset = ClientePlanoFormSet(request.POST or None, instance=cliente)
-
-    aviso_vencimento = None
-    for cp in cliente.clienteplano_set.filter(ativo=True):
-        if cp.data_fim:
-            dias_restantes = (cp.data_fim - date.today()).days
-            if dias_restantes < 0:
-                aviso_vencimento = f"Plano {cp.plano.nome} vencido!"
-            elif dias_restantes <= 7:
-                aviso_vencimento = f"Plano {cp.plano.nome} vence em {dias_restantes} dias"
-
-    if request.method == "POST":
-        if form.is_valid() and formset.is_valid():
-            form.save()
-            formset.save()
-            return redirect('lista_clientes')
-
+    """Edita um cliente existente"""
+    cliente = get_object_or_404(Cliente, pk=pk)
+    
+    if request.method == 'POST':
+        form = ClienteForm(request.POST, request.FILES, instance=cliente)
+        if form.is_valid():
+            cliente = form.save()
+            messages.success(
+                request, 
+                f'✅ Cliente {cliente.nome} atualizado com sucesso!'
+            )
+            return redirect('lista_clientes')  #  Redireciona para lista
+    else:
+        form = ClienteForm(instance=cliente)
+    
     return render(request, 'clientes/form.html', {
         'form': form,
-        'formset': formset,
-        'aviso_vencimento': aviso_vencimento
+        'cliente': cliente
     })
 
 
@@ -293,7 +270,7 @@ def criar_pagamento(request):
         except Exception as e:
             messages.error(request, f'❌ Erro ao processar pagamento: {str(e)}')
     
-    # ✅ DEFINE OS MÉTODOS DE PAGAMENTO
+    #  DEFINE OS MÉTODOS DE PAGAMENTO
     metodos = [
         {
             'value': 'dinheiro',
@@ -321,7 +298,7 @@ def criar_pagamento(request):
     context = {
         'clientes': clientes,
         'planos': planos,
-        'metodos': metodos,  # ✅ Passa os métodos para o template
+        'metodos': metodos,  #  Passa os métodos para o template
     }
     
     return render(request, 'pagamento/form.html', context)
@@ -541,28 +518,109 @@ def coletar_imagens_cliente(request, pk):
 # treinamento de modelo
 @login_required
 def treinar_modelo(request):
-    if request.method != 'POST':
-        return redirect('lista_clientes')
+    """Executa o script de treinamento do modelo LBPH"""
+    if request.method == 'POST':
+        try:
+            # Caminho do script de treinamento
+            script_path = os.path.join(
+                settings.BASE_DIR,
+                'academia',
+                'reconhecimento',
+                'treina.py'
+            )
+            
+            # Caminho onde o trainer.yml deve ser salvo
+            trainer_path = os.path.join(
+                settings.BASE_DIR,
+                'academia',
+                'reconhecimento',
+                'trainer.yml'
+            )
+            
+            # Verifica se há dataset
+            dataset_path = os.path.join(settings.BASE_DIR, 'dataset')
+            if not os.path.exists(dataset_path) or not os.listdir(dataset_path):
+                messages.error(
+                    request,
+                    '❌ Nenhuma foto capturada!\n\n'
+                    '💡 Antes de treinar:\n'
+                    '1. Vá em Detalhes do Cliente\n'
+                    '2. Clique em "Capturar Fotos"\n'
+                    '3. Capture pelo menos 30 fotos\n'
+                    '4. Depois clique em "Treinar Modelo"'
+                )
+                return redirect(request.META.get('HTTP_REFERER', 'home'))
+            
+            print(f"\n[INFO] Executando treinamento...")
+            print(f"[INFO] Script: {script_path}")
+            print(f"[INFO] Trainer será salvo em: {trainer_path}")
+            
+            # Executa o script
+            processo = subprocess.Popen(
+                [sys.executable, script_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            # Aguarda conclusão e captura output
+            stdout, stderr = processo.communicate()
+            
+            # Mostra output no console do Django
+            print("\n" + "="*60)
+            print("📋 OUTPUT DO TREINAMENTO:")
+            print("="*60)
+            print(stdout)
+            if stderr:
+                print("\n⚠️ ERROS:")
+                print(stderr)
+            print("="*60 + "\n")
+            
+            # Verifica se o arquivo trainer.yml foi criado
+            if os.path.exists(trainer_path):
+                # Conta quantos clientes foram treinados
+                total_clientes = len([d for d in os.listdir(dataset_path) 
+                                     if os.path.isdir(os.path.join(dataset_path, d))])
+                
+                messages.success(
+                    request,
+                    f'✅ Modelo treinado com sucesso!\n\n'
+                    f'📊 Estatísticas:\n'
+                    f'• {total_clientes} cliente(s) processado(s)\n'
+                    f'• Modelo salvo em: trainer.yml\n\n'
+                    f'🎯 Próximos passos:\n'
+                    f'1. Vá em Presenças\n'
+                    f'2. Clique em "Reconhecimento Facial"\n'
+                    f'3. Posicione o rosto na câmera'
+                )
+            else:
+                messages.error(
+                    request,
+                    f'❌ Treinamento executou mas trainer.yml não foi criado!\n\n'
+                    f'📋 Output:\n{stdout}\n\n'
+                    f'⚠️ Erros:\n{stderr if stderr else "Nenhum"}\n\n'
+                    f'💡 Tente executar manualmente:\n'
+                    f'python academia/reconhecimento/treina.py'
+                )
+        
+        except Exception as e:
+            messages.error(
+                request,
+                f'❌ Erro ao executar treinamento:\n\n'
+                f'{str(e)}\n\n'
+                f'💡 Tente manualmente no terminal:\n'
+                f'python academia/reconhecimento/treina.py'
+            )
+            print(f"\n[ERRO] Exceção no treinamento: {e}\n")
     
-    base = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'academia', 'reconhecimento'))
-    script = os.path.join(base, 'treina.py')
-    python_exec = sys.executable
-    
-    creationflags = subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0
-    
-    try:
-        proc = subprocess.run([python_exec, script], capture_output=True, text=True, timeout=120, creationflags=creationflags)
-        output = (proc.stdout or proc.stderr).strip()
-        messages.success(request, output or "Modelo treinado com sucesso!")
-    except Exception as exc:
-        messages.error(request, f"Erro: {exc}")
-    
-    return redirect(request.META.get('HTTP_REFERER') or 'lista_clientes')
+    # Redireciona de volta
+    return redirect(request.META.get('HTTP_REFERER', 'home'))
+
 #presenca 
 @login_required
 def presenca_list(request):
     """Lista todas as presenças com filtros"""
-    # ✅ Captura parâmetros de filtro
+    #  Captura parâmetros de filtro
     cliente_id = request.GET.get('cliente', '')
     data_inicio = request.GET.get('data_inicio', '')
     data_fim = request.GET.get('data_fim', '')
@@ -834,4 +892,94 @@ def registro_view(request):
         return redirect('home')
     
     return render(request, 'login/registro.html')
+
+@login_required
+def deletar_reconhecimento(request, pk):
+    """Deleta dataset e dados de reconhecimento de um cliente"""
+    cliente = get_object_or_404(Cliente, pk=pk)
+    
+    if request.method == 'POST':
+        try:
+            # Caminho da pasta do dataset
+            dataset_dir = os.path.join('dataset', str(cliente.id))
+            
+            #  Remove pasta com todas as fotos
+            if os.path.exists(dataset_dir):
+                shutil.rmtree(dataset_dir)
+                mensagem_dataset = f'✅ {len(os.listdir(dataset_dir)) if os.path.exists(dataset_dir) else 0} fotos deletadas'
+            else:
+                mensagem_dataset = '⚠️ Dataset não encontrado'
+            
+            # Avisa que precisa retreinar
+            messages.warning(
+                request, 
+                f'🗑️ Reconhecimento facial de {cliente.nome} deletado!\n\n'
+                f'{mensagem_dataset}\n\n'
+                f'⚠️ IMPORTANTE: Execute o treinamento novamente para atualizar o modelo:\n'
+                f'python academia/reconhecimento/treina.py'
+            )
+            
+            return redirect('cliente_detail', pk=pk)
+            
+        except Exception as e:
+            messages.error(request, f'❌ Erro ao deletar: {str(e)}')
+    
+    context = {
+        'cliente': cliente,
+        'tem_dataset': os.path.exists(os.path.join('dataset', str(cliente.id)))
+    }
+    
+    return render(request, 'reconhecimento/confirmar_deletar.html', context)
+
+@login_required
+def deletar_cliente_completo(request, pk):
+    """Deleta cliente E todos os dados de reconhecimento"""
+    cliente = get_object_or_404(Cliente, pk=pk)
+    
+    if request.method == 'POST':
+        try:
+            nome_cliente = cliente.nome
+            
+            #  Deleta dataset
+            dataset_dir = os.path.join('dataset', str(cliente.id))
+            if os.path.exists(dataset_dir):
+                shutil.rmtree(dataset_dir)
+            
+            #  Deleta foto de perfil
+            if cliente.imagem:
+                if os.path.exists(cliente.imagem.path):
+                    os.remove(cliente.imagem.path)
+            
+            #  Deleta registros relacionados
+            # ClientePlano, Presenca, Pagamento são deletados em CASCADE
+            
+            #  Deleta o cliente
+            cliente.delete()
+            
+            messages.success(
+                request,
+                f'✅ {nome_cliente} deletado completamente!\n\n'
+                f'- Cadastro removido\n'
+                f'- Dataset removido\n'
+                f'- Foto de perfil removida\n'
+                f'- Histórico de presenças removido\n'
+                f'- Pagamentos removidos\n\n'
+                f'⚠️ Execute o retreinamento: python academia/reconhecimento/treina.py'
+            )
+            
+            return redirect('lista_clientes')
+            
+        except Exception as e:
+            messages.error(request, f'❌ Erro: {str(e)}')
+            return redirect('cliente_detail', pk=pk)
+    
+    # GET - Mostra página de confirmação
+    context = {
+        'cliente': cliente,
+        'tem_dataset': os.path.exists(os.path.join('dataset', str(cliente.id))),
+        'total_presencas': Presenca.objects.filter(cliente=cliente).count(),
+        'total_pagamentos': Pagamento.objects.filter(cliente=cliente).count(),
+    }
+    
+    return render(request, 'reconhecimento/confirmar_deletar_completo.html', context)
 

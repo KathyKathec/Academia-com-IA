@@ -21,6 +21,22 @@
         <form method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                <h5><i class="bi bi-exclamation-triangle"></i> Erros no formulário:</h5>
+                <ul class="mb-0">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                        <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
             <!-- Card - Dados Pessoais -->
             <div class="card mb-4">
                 <div class="card-header">
@@ -31,76 +47,76 @@
                 <div class="card-body p-4">
                     <div class="row">
                         <div class="col-md-8 mb-3">
-                            <label class="form-label fw-semibold">
+                            <label class="form-label fw-semibold" for="{{ form.nome.id_for_label }}">
                                 <i class="bi bi-person-fill text-primary"></i> Nome Completo *
                             </label>
-                            {{ form.nome|add_class:"form-control form-control-lg" }}
+                            {{ form.nome|add_class:"form-control form-control-lg"|attr:"placeholder:Nome completo do cliente" }}
                             {% if form.nome.errors %}
-                            <div class="text-danger mt-1">{{ form.nome.errors.0 }}</div>
+                            <div class="invalid-feedback d-block">{{ form.nome.errors.0 }}</div>
                             {% endif %}
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold">
+                            <label class="form-label fw-semibold" for="{{ form.identidade.id_for_label }}">
                                 <i class="bi bi-card-heading text-info"></i> Identidade *
                             </label>
-                            {{ form.identidade|add_class:"form-control form-control-lg" }}
+                            {{ form.identidade|add_class:"form-control form-control-lg"|attr:"placeholder:RG ou CPF" }}
                             {% if form.identidade.errors %}
-                            <div class="text-danger mt-1">{{ form.identidade.errors.0 }}</div>
+                            <div class="invalid-feedback d-block">{{ form.identidade.errors.0 }}</div>
                             {% endif %}
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold">
+                            <label class="form-label fw-semibold" for="{{ form.telefone.id_for_label }}">
                                 <i class="bi bi-telephone-fill text-success"></i> Telefone *
                             </label>
                             {{ form.telefone|add_class:"form-control form-control-lg"|attr:"placeholder:(00) 00000-0000" }}
                             {% if form.telefone.errors %}
-                            <div class="text-danger mt-1">{{ form.telefone.errors.0 }}</div>
+                            <div class="invalid-feedback d-block">{{ form.telefone.errors.0 }}</div>
                             {% endif %}
                         </div>
 
                         <div class="col-md-8 mb-3">
-                            <label class="form-label fw-semibold">
+                            <label class="form-label fw-semibold" for="{{ form.email.id_for_label }}">
                                 <i class="bi bi-envelope-fill text-warning"></i> Email
                             </label>
                             {{ form.email|add_class:"form-control form-control-lg"|attr:"placeholder:email@exemplo.com" }}
                             {% if form.email.errors %}
-                            <div class="text-danger mt-1">{{ form.email.errors.0 }}</div>
+                            <div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>
                             {% endif %}
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold">
+                            <label class="form-label fw-semibold" for="{{ form.idade.id_for_label }}">
                                 <i class="bi bi-cake2 text-danger"></i> Idade
                             </label>
-                            {{ form.idade|add_class:"form-control form-control-lg" }}
+                            {{ form.idade|add_class:"form-control form-control-lg"|attr:"placeholder:Ex: 25" }}
                             {% if form.idade.errors %}
-                            <div class="text-danger mt-1">{{ form.idade.errors.0 }}</div>
+                            <div class="invalid-feedback d-block">{{ form.idade.errors.0 }}</div>
                             {% endif %}
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold">
+                            <label class="form-label fw-semibold" for="{{ form.sexo.id_for_label }}">
                                 <i class="bi bi-gender-ambiguous text-secondary"></i> Sexo
                             </label>
                             {{ form.sexo|add_class:"form-select form-select-lg" }}
                             {% if form.sexo.errors %}
-                            <div class="text-danger mt-1">{{ form.sexo.errors.0 }}</div>
+                            <div class="invalid-feedback d-block">{{ form.sexo.errors.0 }}</div>
                             {% endif %}
                         </div>
 
                         <div class="col-md-4 mb-3">
-                            <label class="form-label fw-semibold">
+                            <label class="form-label fw-semibold" for="{{ form.status.id_for_label }}">
                                 <i class="bi bi-toggle-on text-success"></i> Status
                             </label>
                             <div class="form-check form-switch" style="padding-top: 0.75rem;">
                                 {{ form.status|add_class:"form-check-input"|attr:"role:switch"|attr:"style:width: 3rem; height: 1.5rem; cursor: pointer;" }}
-                                <label class="form-check-label ms-2" for="{{ form.status.id_for_label }}">
+                                <label class="form-check-label ms-2" for="{{ form.status.id_for_label }}" style="color: var(--text-primary);">
                                     <span class="badge bg-success">Ativo</span>
                                 </label>
                             </div>
@@ -108,12 +124,12 @@
                     </div>
 
                     <div class="mb-0">
-                        <label class="form-label fw-semibold">
+                        <label class="form-label fw-semibold" for="{{ form.endereco.id_for_label }}">
                             <i class="bi bi-geo-alt-fill text-danger"></i> Endereço Completo
                         </label>
                         {{ form.endereco|add_class:"form-control"|attr:"rows:3"|attr:"placeholder:Rua, número, bairro, cidade, estado" }}
                         {% if form.endereco.errors %}
-                        <div class="text-danger mt-1">{{ form.endereco.errors.0 }}</div>
+                        <div class="invalid-feedback d-block">{{ form.endereco.errors.0 }}</div>
                         {% endif %}
                     </div>
                 </div>
@@ -138,7 +154,7 @@
                         </div>
                         {% endif %}
                         <div class="{% if cliente and cliente.imagem %}col-md-9{% else %}col-12{% endif %}">
-                            <label class="form-label fw-semibold">
+                            <label class="form-label fw-semibold" for="{{ form.imagem.id_for_label }}">
                                 <i class="bi bi-image text-primary"></i> 
                                 {% if cliente and cliente.imagem %}Trocar Foto{% else %}Adicionar Foto{% endif %}
                             </label>
@@ -147,7 +163,7 @@
                                 <i class="bi bi-info-circle"></i> Formatos aceitos: JPG, PNG (máx. 5MB)
                             </small>
                             {% if form.imagem.errors %}
-                            <div class="text-danger mt-1">{{ form.imagem.errors.0 }}</div>
+                            <div class="invalid-feedback d-block">{{ form.imagem.errors.0 }}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -173,18 +189,50 @@
 </div>
 
 <style>
+.card {
+    background: var(--dark-card);
+    border: 1px solid var(--dark-hover);
+}
+
 .card-header {
     background: rgba(99, 102, 241, 0.05);
     border-bottom: 1px solid var(--dark-hover);
 }
 
 .card-header h5 {
-    color: var(--text-primary);
+    color: var(--text-primary) !important;
+}
+
+.form-label {
+    color: var(--text-primary) !important;
+    font-weight: 600;
+}
+
+.form-control, .form-control-lg, .form-select, .form-select-lg {
+    background: var(--dark-hover) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--dark-hover);
+}
+
+.form-control::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
 }
 
 .form-control:focus, .form-control-lg:focus, .form-select:focus, .form-select-lg:focus {
+    background: var(--dark-hover) !important;
+    color: var(--text-primary) !important;
     border-color: var(--primary);
     box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.15);
+}
+
+.form-select option {
+    background: var(--dark-card);
+    color: var(--text-primary);
+}
+
+textarea.form-control {
+    resize: vertical;
 }
 
 .btn-lg {
@@ -192,14 +240,90 @@
     font-weight: 600;
 }
 
+.form-check-input {
+    background: var(--dark-hover);
+    border-color: var(--text-secondary);
+}
+
 .form-check-input:checked {
     background-color: var(--success);
     border-color: var(--success);
+}
+
+.form-check-label {
+    color: var(--text-primary) !important;
 }
 
 .img-thumbnail {
     background: var(--dark-hover);
     border: 2px solid var(--dark-hover);
 }
+
+.invalid-feedback {
+    color: var(--danger) !important;
+    font-size: 0.875rem;
+}
+
+.alert {
+    background: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    color: var(--text-primary);
+}
+
+.alert h5 {
+    color: var(--danger) !important;
+}
+
+.alert ul li {
+    color: var(--text-primary);
+}
+
+.text-secondary {
+    color: var(--text-secondary) !important;
+}
+
+/*  Ícones coloridos */
+.text-primary {
+    color: var(--primary) !important;
+}
+
+.text-info {
+    color: var(--info) !important;
+}
+
+.text-success {
+    color: var(--success) !important;
+}
+
+.text-warning {
+    color: var(--warning) !important;
+}
+
+.text-danger {
+    color: var(--danger) !important;
+}
 </style>
+
+<script>
+//  Mostra/oculta badge de status dinamicamente
+document.addEventListener('DOMContentLoaded', function() {
+    const statusSwitch = document.querySelector('input[name="status"]');
+    const statusBadge = document.querySelector('.form-check-label .badge');
+    
+    if (statusSwitch && statusBadge) {
+        function updateBadge() {
+            if (statusSwitch.checked) {
+                statusBadge.textContent = 'Ativo';
+                statusBadge.className = 'badge bg-success';
+            } else {
+                statusBadge.textContent = 'Inativo';
+                statusBadge.className = 'badge bg-danger';
+            }
+        }
+        
+        statusSwitch.addEventListener('change', updateBadge);
+        updateBadge(); // Atualiza no carregamento
+    }
+});
+</script>
 {% endblock %}
