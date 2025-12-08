@@ -5,43 +5,34 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <div class="card border-danger">
+            <div class="card shadow border-danger">
                 <div class="card-header bg-danger text-white">
                     <h4 class="mb-0">
                         <i class="bi bi-exclamation-triangle-fill"></i> Confirmar Exclusão
                     </h4>
                 </div>
                 <div class="card-body text-center">
-                    <i class="bi bi-trash" style="font-size: 4rem; color: var(--danger);"></i>
+                    <i class="bi bi-trash" style="font-size: 4rem; color: #dc3545;"></i>
                     
-                    <h5 class="mt-3">Deletar serviço "{{ servico.nome }}"?</h5>
+                    <h5 class="mt-3" style="color: #ffffff; font-weight: bold;">
+                        Deletar serviço "<strong style="color: #ff4757;">{{ servico.nome }}</strong>"?
+                    </h5>
                     
-                    <div class="alert alert-info mt-3 text-start">
-                        <strong><i class="bi bi-info-circle"></i> Informações do serviço:</strong>
-                        <ul class="mb-0 mt-2">
+                    <div class="alert alert-info mt-3 text-start" style="background-color: #d1ecf1; border-left: 5px solid #17a2b8;">
+                        <strong style="color: #0c5460;">
+                            <i class="bi bi-info-circle"></i> Informações do serviço:
+                        </strong>
+                        <ul class="mb-0 mt-2" style="color: #0c5460;">
                             <li><strong>Nome:</strong> {{ servico.nome }}</li>
                             {% if servico.descricao %}
-                            <li><strong>Descrição:</strong> {{ servico.descricao|truncatewords:15 }}</li>
+                            <li><strong>Descrição:</strong> {{ servico.descricao }}</li>
                             {% endif %}
                         </ul>
                     </div>
 
-                    {% if planos_com_servico > 0 %}
-                    <div class="alert alert-warning mt-3 text-start">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        <strong>Atenção!</strong><br>
-                        Este serviço está sendo usado em <strong>{{ planos_com_servico }} plano(s)</strong>:<br>
-                        <ul class="mt-2 mb-0">
-                            {% for plano in planos %}
-                            <li>{{ plano.nome }}</li>
-                            {% endfor %}
-                        </ul>
-                        <small class="text-muted">O serviço será removido desses planos.</small>
-                    </div>
-                    {% endif %}
-
-                    <p class="text-muted mt-3">
-                        Esta operação <strong class="text-danger">não pode ser desfeita</strong>.
+                    <!-- ✅ BRANCO PURO -->
+                    <p style="color: #ffffff; font-size: 1.1rem; margin-top: 20px;">
+                        Esta operação <strong style="color: #ff4757;">não pode ser desfeita</strong>.
                     </p>
                     
                     <form method="POST" class="mt-4">

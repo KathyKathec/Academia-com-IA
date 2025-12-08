@@ -1,27 +1,40 @@
 {% extends 'base.html' %}
-{% block title %}Confirmar Limpeza{% endblock %}
-
+{% block title %}Confirmar Limpeza de Presenças{% endblock %}
 {% block content %}
+
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <div class="card border-danger">
+            <div class="card shadow border-danger">
                 <div class="card-header bg-danger text-white">
                     <h4 class="mb-0">
                         <i class="bi bi-exclamation-triangle-fill"></i> Confirmar Limpeza
                     </h4>
                 </div>
                 <div class="card-body text-center">
-                    <i class="bi bi-trash" style="font-size: 4rem; color: var(--danger);"></i>
-                    <h5 class="mt-3">Você tem certeza?</h5>
-                    <p class="text-muted">
-                        Esta ação vai <strong>deletar todas as {{ total }} presenças</strong> registradas.<br>
-                        Esta operação <strong class="text-danger">não pode ser desfeita</strong>.
+                    <i class="bi bi-trash" style="font-size: 4rem; color: #dc3545;"></i>
+                    
+                    <h5 class="mt-3" style="color: #ffffff; font-weight: bold;">Você tem certeza?</h5>
+                    
+                    <p style="color: #ffffff; font-size: 1.1rem; margin-top: 15px;">
+                        Esta ação vai <strong style="color: #ff4757;">deletar todas as {{ total }} presenças</strong> registradas.
                     </p>
                     
-                    <div class="alert alert-warning mt-3">
-                        <i class="bi bi-lightbulb"></i> 
-                        <strong>Dica:</strong> Exporte o CSV antes de limpar para manter um backup.
+                    <div class="alert alert-warning mt-3" style="background-color: #fff3cd; border-left: 5px solid #ffc107;">
+                        <i class="bi bi-exclamation-circle" style="color: #856404;"></i> 
+                        <strong style="color: #856404;">Atenção:</strong> 
+                        <span style="color: #856404;">
+                            Apenas o histórico de presenças será deletado.<br>
+                            Os clientes e planos <strong>NÃO serão afetados</strong>.
+                        </span>
+                    </div>
+
+                    <div class="alert alert-info" style="background-color: #d1ecf1; border-left: 5px solid #17a2b8;">
+                        <i class="bi bi-lightbulb" style="color: #0c5460;"></i> 
+                        <strong style="color: #0c5460;">Dica:</strong> 
+                        <span style="color: #0c5460;">
+                            Exporte o CSV antes de limpar para manter um backup.
+                        </span>
                     </div>
                     
                     <form method="POST" class="mt-4">
@@ -38,4 +51,5 @@
         </div>
     </div>
 </div>
+
 {% endblock %}

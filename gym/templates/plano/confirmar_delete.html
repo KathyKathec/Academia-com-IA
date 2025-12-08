@@ -5,37 +5,44 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
-            <div class="card border-danger">
+            <div class="card shadow border-danger">
                 <div class="card-header bg-danger text-white">
                     <h4 class="mb-0">
                         <i class="bi bi-exclamation-triangle-fill"></i> Confirmar Exclusão
                     </h4>
                 </div>
                 <div class="card-body text-center">
-                    <i class="bi bi-trash" style="font-size: 4rem; color: var(--danger);"></i>
+                    <i class="bi bi-trash" style="font-size: 4rem; color: #dc3545;"></i>
                     
-                    <h5 class="mt-3">Deletar plano "{{ plano.nome }}"?</h5>
+                
+                    <h5 class="mt-3" style="color: #ffffff; font-weight: bold;">
+                        Deletar plano "<strong style="color: #ff4757;">{{ plano.nome }}</strong>"?
+                    </h5>
                     
-                    <div class="alert alert-info mt-3 text-start">
-                        <strong><i class="bi bi-info-circle"></i> Informações do plano:</strong>
-                        <ul class="mb-0 mt-2">
+                    <div class="alert alert-info mt-3 text-start" style="background-color: #d1ecf1; border-left: 5px solid #17a2b8;">
+                        <strong style="color: #0c5460;">
+                            <i class="bi bi-info-circle"></i> Informações do plano:
+                        </strong>
+                        <ul class="mb-0 mt-2" style="color: #0c5460;">
                             <li><strong>Tipo:</strong> {{ plano.tipo.get_nome_display }}</li>
-                            <li><strong>Valor:</strong> R$ {{ plano.preco }}</li>
+                            <li><strong>Valor:</strong> <span style="color: #2ed573; font-weight: bold;">R$ {{ plano.preco }}</span></li>
                             <li><strong>Duração:</strong> {{ plano.tipo.dias }} dias</li>
                         </ul>
                     </div>
 
                     {% if clientes_com_plano > 0 %}
-                    <div class="alert alert-warning mt-3">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        <strong>Atenção!</strong><br>
-                        Este plano possui <strong>{{ clientes_com_plano }} cliente(s) ativo(s)</strong>.<br>
-                        Ao deletar, os clientes ficarão sem plano ativo.
+                    <div class="alert alert-warning mt-3" style="background-color: #fff3cd; border-left: 5px solid #ffc107;">
+                        <i class="bi bi-exclamation-triangle" style="color: #856404;"></i>
+                        <strong style="color: #856404;">Atenção!</strong><br>
+                        <span style="color: #856404;">
+                            Este plano possui <strong>{{ clientes_com_plano }} cliente(s) ativo(s)</strong>.<br>
+                            Ao deletar, os clientes ficarão sem plano ativo.
+                        </span>
                     </div>
                     {% endif %}
 
-                    <p class="text-muted mt-3">
-                        Esta operação <strong class="text-danger">não pode ser desfeita</strong>.
+                    <p style="color: #ffffff; font-size: 1.1rem; margin-top: 20px;">
+                        Esta operação <strong style="color: #ff4757;">não pode ser desfeita</strong>.
                     </p>
                     
                     <form method="POST" class="mt-4">
